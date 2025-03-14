@@ -6,6 +6,7 @@ import (
 	"personal-notes-with-go/handlers"
 	"personal-notes-with-go/repositories"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,6 +24,21 @@ func main() {
 
 	// Inisialisasi Gin
 	r := gin.Default()
+
+	// Configure CORS
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	r.Use(cors.New(config))
+
+	// Serve static files for frontend
+	r.Static("/frontend", "./frontend")
+
+	// Serve the SPA
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(301, "/frontend")
+	})
 
 	// Inisialisasi handler
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
