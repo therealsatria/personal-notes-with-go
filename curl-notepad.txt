@@ -1,0 +1,57 @@
+category
+
+# Kategori 1: Pekerjaan
+curl -X POST -H "Content-Type: application/json" -d '{"name": "Pekerjaan"}' http://localhost:8080/categories
+
+# Kategori 2: Pribadi
+curl -X POST -H "Content-Type: application/json" -d '{"name": "Pribadi"}' http://localhost:8080/categories
+
+# Kategori 3: Kuliah
+curl -X POST -H "Content-Type: application/json" -d '{"name": "Kuliah"}' http://localhost:8080/categories
+
+# Kategori 4: Proyek
+curl -X POST -H "Content-Type: application/json" -d '{"name": "Proyek"}' http://localhost:8080/categories
+
+# Kategori 5: Hobi
+curl -X POST -H "Content-Type: application/json" -d '{"name": "Hobi"}' http://localhost:8080/categories
+
+notes
+
+# Catatan 1: Rapat Mingguan (Kategori: Pekerjaan)
+curl -X POST -H "Content-Type: application/json" -d '{"subject": "Rapat Mingguan", "content": "Membahas progress proyek", "priority": "High", "tags": "meeting,project", "category_id": "cd2f5422-d223-476f-b8d1-da6ec24107af"}' http://localhost:8080/notes
+
+# Catatan 2: Belajar Golang (Kategori: Kuliah)
+curl -X POST -H "Content-Type: application/json" -d '{"subject": "Belajar Golang", "content": "Membuat aplikasi web", "priority": "Medium", "tags": "golang,web", "category_id": "98b8c5f4-c0d1-4dcf-bd9a-5715d19b1443"}' http://localhost:8080/notes
+
+# Catatan 3: Membeli Kebutuhan (Kategori: Pribadi)
+curl -X POST -H "Content-Type: application/json" -d '{"subject": "Membeli Kebutuhan", "content": "Membeli sabun dan sampo", "priority": "Low", "tags": "belanja", "category_id": "cea0ecd6-1e6b-40b6-9f05-2fa29e519574"}' http://localhost:8080/notes
+
+# Catatan 4: Desain UI/UX (Kategori: Proyek)
+curl -X POST -H "Content-Type: application/json" -d '{"subject": "Desain UI/UX", "content": "Membuat desain wireframe", "priority": "High", "tags": "desain,uiux", "category_id": "12446b37-fb41-4496-b3bf-e54123f1e105"}' http://localhost:8080/notes
+
+# Catatan 5: Bermain Gitar (Kategori: Hobi)
+curl -X POST -H "Content-Type: application/json" -d '{"subject": "Bermain Gitar", "content": "Berlatih lagu baru", "priority": "Medium", "tags": "musik,gitar", "category_id": "0e99a024-c7d4-4f10-8e0e-5a865c0d1b26"}' http://localhost:8080/notes
+
+
+[
+  {
+    "id": "cd2f5422-d223-476f-b8d1-da6ec24107af",
+    "name": "Pekerjaan"
+  },
+  {
+    "id": "98b8c5f4-c0d1-4dcf-bd9a-5715d19b1443",
+    "name": "Pribadi"
+  },
+  {
+    "id": "cea0ecd6-1e6b-40b6-9f05-2fa29e519574",
+    "name": "Kuliah"
+  },
+  {
+    "id": "12446b37-fb41-4496-b3bf-e54123f1e105",
+    "name": "Proyek"
+  },
+  {
+    "id": "0e99a024-c7d4-4f10-8e0e-5a865c0d1b26",
+    "name": "Hobi"
+  }
+]

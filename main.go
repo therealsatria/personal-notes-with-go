@@ -139,7 +139,7 @@ func main() {
     // Endpoint: Tambah note
     r.POST("/notes", func(c *gin.Context) {
         var note Note
-        if err := c.BindJSON(¬e); err != nil {
+        if err := c.BindJSON(&note); err != nil {
             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
@@ -193,7 +193,7 @@ func main() {
     r.PUT("/notes/:id", func(c *gin.Context) {
         id := c.Param("id")
         var note Note
-        if err := c.BindJSON(¬e); err != nil {
+        if err := c.BindJSON(&note); err != nil {
             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
