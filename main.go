@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"personal-notes-with-go/database"
 	"personal-notes-with-go/handlers"
 	"personal-notes-with-go/repositories"
@@ -11,10 +12,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Middleware to check if encryption is valid before allowing data modification
+func requireValidEncryption() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !utils.IsEncryptionValid() {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "Encryption system is not properly initialized. Data modification is disabled for security reasons.",
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 func main() {
 	// Initialize encryption
 	if err := utils.InitEncryption(); err != nil {
-		log.Fatalf("Failed to initialize encryption: %v", err)
+		log.Printf("WARNING: Failed to initialize encryption: %v", err)
+		log.Printf("Data modification will be disabled for security reasons.")
+		// We continue execution but with encryption marked as invalid
 	}
 
 	// Inisialisasi database
@@ -49,23 +66,31 @@ func main() {
 	// Inisialisasi handler
 	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
 	noteHandler := handlers.NewNoteHandler(noteRepo)
+	keyHandler := handlers.NewKeyHandler()
+	encryptionHandler := handlers.NewEncryptionHandler()
 
-	// Routing
+	// Encryption status endpoint
+	r.GET("/encryption/status", encryptionHandler.GetStatus)
+
+	// Routing with encryption validation middleware for data modification endpoints
 	categoryGroup := r.Group("/categories")
 	{
-		categoryGroup.POST("", categoryHandler.CreateCategory)
+		categoryGroup.POST("", requireValidEncryption(), categoryHandler.CreateCategory)
 		categoryGroup.GET("", categoryHandler.GetCategories)
-		categoryGroup.PUT("/:id", categoryHandler.UpdateCategory)
-		categoryGroup.DELETE("/:id", categoryHandler.DeleteCategory)
+		categoryGroup.PUT("/:id", requireValidEncryption(), categoryHandler.UpdateCategory)
+		categoryGroup.DELETE("/:id", requireValidEncryption(), categoryHandler.DeleteCategory)
 	}
 
 	noteGroup := r.Group("/notes")
 	{
-		noteGroup.POST("", noteHandler.CreateNote)
+		noteGroup.POST("", requireValidEncryption(), noteHandler.CreateNote)
 		noteGroup.GET("", noteHandler.GetNotes)
-		noteGroup.PUT("/:id", noteHandler.UpdateNote)
-		noteGroup.DELETE("/:id", noteHandler.DeleteNote)
+		noteGroup.PUT("/:id", requireValidEncryption(), noteHandler.UpdateNote)
+		noteGroup.DELETE("/:id", requireValidEncryption(), noteHandler.DeleteNote)
 	}
+
+	// Key generation endpoint
+	r.POST("/generate-key", keyHandler.GenerateKey)
 
 	// Jalankan server
 	if err := r.Run(":8080"); err != nil {

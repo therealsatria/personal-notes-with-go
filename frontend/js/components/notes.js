@@ -20,10 +20,18 @@ class NotesComponent {
         this.confirmMessage = document.getElementById('confirm-message');
         this.confirmYesBtn = document.getElementById('confirm-yes');
         
+        // Search elements
+        this.searchInput = document.getElementById('search-notes');
+        this.searchClearBtn = document.getElementById('search-clear-btn');
+        this.showAllBtn = document.getElementById('show-all-notes-btn');
+        
         // State
         this.notes = [];
         this.categories = [];
         this.currentNoteId = null;
+        this.searchQuery = '';
+        this.searchTimeout = null;
+        this.showAllNotes = false;
         
         // Initialize
         this.init();
@@ -37,6 +45,11 @@ class NotesComponent {
         this.addNoteBtn.addEventListener('click', () => this.openAddNoteModal());
         this.noteForm.addEventListener('submit', (e) => this.handleNoteSubmit(e));
         
+        // Search event listeners
+        this.searchInput.addEventListener('input', () => this.handleSearchInput());
+        this.searchClearBtn.addEventListener('click', () => this.clearSearch());
+        this.showAllBtn.addEventListener('click', () => this.toggleShowAll());
+        
         // Close modal buttons
         const closeButtons = this.noteModal.querySelectorAll('.close-modal');
         closeButtons.forEach(button => {
@@ -49,16 +62,96 @@ class NotesComponent {
     }
     
     /**
+     * Toggle between showing all notes and limited notes
+     */
+    toggleShowAll() {
+        this.showAllNotes = !this.showAllNotes;
+        
+        // Update button appearance
+        if (this.showAllNotes) {
+            this.showAllBtn.classList.add('active');
+            this.showAllBtn.innerHTML = '<i class="fas fa-list-alt"></i> Showing All';
+        } else {
+            this.showAllBtn.classList.remove('active');
+            this.showAllBtn.innerHTML = '<i class="fas fa-list"></i> Show All';
+        }
+        
+        // Reload notes with new setting
+        this.loadNotes();
+    }
+    
+    /**
+     * Handle search input with debounce
+     */
+    handleSearchInput() {
+        const query = this.searchInput.value.trim();
+        
+        // Show/hide clear button
+        if (query) {
+            this.searchClearBtn.classList.add('visible');
+        } else {
+            this.searchClearBtn.classList.remove('visible');
+        }
+        
+        // Debounce search
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            this.searchQuery = query;
+            this.loadNotes();
+        }, 300);
+    }
+    
+    /**
+     * Clear search input and reset results
+     */
+    clearSearch() {
+        this.searchInput.value = '';
+        this.searchClearBtn.classList.remove('visible');
+        this.searchQuery = '';
+        this.loadNotes();
+    }
+    
+    /**
      * Load all notes from the API
      */
     async loadNotes() {
         try {
             this.notesContainer.innerHTML = '<div class="loading">Loading notes...</div>';
-            this.notes = await apiService.getNotes();
+            
+            // Build URL with parameters
+            let url = '/notes';
+            const params = new URLSearchParams();
+            
+            if (this.searchQuery) {
+                params.append('q', this.searchQuery);
+            }
+            
+            if (this.showAllNotes) {
+                params.append('all', 'true');
+            }
+            
+            const queryString = params.toString();
+            if (queryString) {
+                url += `?${queryString}`;
+            }
+            
+            const notes = await apiService.request(url);
+            
+            // Ensure notes is always an array, even if API returns null or undefined
+            this.notes = Array.isArray(notes) ? notes : [];
+            
             this.renderNotes();
         } catch (error) {
-            this.notesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load notes</p></div>';
-            toastService.error('Failed to load notes: ' + error.message);
+            this.notesContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>We were unable to retrieve your notes at this time. ${error.message}</p>
+                    <button class="btn btn-secondary" onclick="notesComponent.loadNotes()">
+                        Try Again
+                    </button>
+                </div>
+            `;
+            console.error('Error loading notes:', error);
         }
     }
     
@@ -67,10 +160,13 @@ class NotesComponent {
      */
     async loadCategories() {
         try {
-            this.categories = await apiService.getCategories();
+            const categories = await apiService.getCategories();
+            // Ensure categories is always an array, even if API returns null or undefined
+            this.categories = Array.isArray(categories) ? categories : [];
             this.populateCategoryDropdown();
         } catch (error) {
-            toastService.error('Failed to load categories: ' + error.message);
+            toastService.error('We were unable to load categories. Please try again later.');
+            console.error('Error loading categories:', error);
         }
     }
     
@@ -92,74 +188,130 @@ class NotesComponent {
      * Render all notes in the container
      */
     renderNotes() {
+        // Ensure notes is always an array
+        if (!Array.isArray(this.notes)) {
+            this.notes = [];
+        }
+        
         if (this.notes.length === 0) {
-            this.notesContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-sticky-note"></i>
-                    <p>No notes found. Create your first note!</p>
-                </div>
-            `;
+            if (this.searchQuery) {
+                this.notesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>No notes were found matching "${this.escapeHtml(this.searchQuery)}"</p>
+                        <button class="btn btn-secondary" onclick="notesComponent.clearSearch()">
+                            Clear Search
+                        </button>
+                    </div>
+                `;
+            } else {
+                this.notesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-sticky-note"></i>
+                        <p>You don't have any notes yet. Click "Add Note" to create your first note.</p>
+                    </div>
+                `;
+            }
             return;
         }
         
-        this.notesContainer.innerHTML = '';
+        // Add note count info
+        let noteCountInfo = '';
+        if (!this.showAllNotes && this.notes.length >= 1) {
+            // If we're showing limited notes (not showing all)
+            noteCountInfo = `
+                <div class="note-count-info">
+                    <p>Showing ${this.notes.length} notes. <a href="#" onclick="event.preventDefault(); notesComponent.toggleShowAll();">Show all notes</a>.</p>
+                </div>
+            `;
+        } else if (this.showAllNotes) {
+            noteCountInfo = `
+                <div class="note-count-info">
+                    <p>Showing all ${this.notes.length} notes.</p>
+                </div>
+            `;
+        }
+        
+        let html = noteCountInfo;
         
         this.notes.forEach(note => {
-            const category = this.categories.find(c => c.id === note.category_id);
-            const categoryName = category ? category.name : 'Uncategorized';
+            // Find category name if available
+            let categoryName = '';
+            if (note.category_id) {
+                const category = this.categories.find(c => c.id === note.category_id);
+                if (category) {
+                    categoryName = category.name;
+                }
+            }
             
-            // Parse tags
-            const tags = note.tags ? note.tags.split(',').map(tag => tag.trim()) : [];
+            // Highlight search matches if search query exists
+            let subject = note.subject;
+            let content = note.content;
             
-            const noteElement = document.createElement('div');
-            noteElement.className = 'card';
-            noteElement.innerHTML = `
-                <div class="card-header">
-                    <h3 class="card-title">${this.escapeHtml(note.subject)}</h3>
-                    <div class="card-actions">
-                        <button class="btn btn-sm btn-secondary edit-note" data-id="${note.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-note" data-id="${note.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+            if (this.searchQuery) {
+                subject = this.highlightText(subject, this.searchQuery);
+                content = this.highlightText(content, this.searchQuery);
+            }
+            
+            html += `
+                <div class="card note-card">
+                    <div class="card-header">
+                        <h3 class="card-title">${subject}</h3>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="notesComponent.openEditNoteModal('${note.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="notesComponent.confirmDeleteNote('${note.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div class="card-content">
-                    ${this.formatContent(note.content)}
-                </div>
-                <div class="card-footer">
-                    <div>
-                        <span class="priority priority-${note.priority}">${note.priority}</span>
-                        <span class="category">${this.escapeHtml(categoryName)}</span>
+                    <div class="card-content">
+                        ${content}
                     </div>
-                    <div class="tags">
-                        ${tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                    <div class="card-footer">
+                        <div>
+                            <span class="priority priority-${note.priority || 'medium'}">${note.priority || 'Medium'}</span>
+                            ${categoryName ? `<span class="category-badge">${this.escapeHtml(categoryName)}</span>` : ''}
+                        </div>
+                        <div class="tags">
+                            ${this.renderTags(note.tags)}
+                        </div>
                     </div>
                 </div>
             `;
-            
-            // Add event listeners
-            const editBtn = noteElement.querySelector('.edit-note');
-            const deleteBtn = noteElement.querySelector('.delete-note');
-            
-            editBtn.addEventListener('click', () => this.openEditNoteModal(note.id));
-            deleteBtn.addEventListener('click', () => this.confirmDeleteNote(note.id));
-            
-            this.notesContainer.appendChild(noteElement);
         });
+        
+        this.notesContainer.innerHTML = html;
     }
     
     /**
-     * Format note content for display
-     * @param {string} content - The note content
-     * @returns {string} - Formatted HTML
+     * Highlight search text in content
+     * @param {string} text - The text to search in
+     * @param {string} query - The search query
+     * @returns {string} - Text with highlighted search matches
      */
-    formatContent(content) {
-        if (!content) return '';
+    highlightText(text, query) {
+        if (!query) return this.escapeHtml(text);
         
-        // Convert line breaks to <br>
-        return this.escapeHtml(content).replace(/\n/g, '<br>');
+        const escapedText = this.escapeHtml(text);
+        const escapedQuery = this.escapeHtml(query);
+        
+        // Case insensitive search
+        const regex = new RegExp(escapedQuery, 'gi');
+        return escapedText.replace(regex, match => `<span class="highlight">${match}</span>`);
+    }
+    
+    /**
+     * Render tags as badges
+     * @param {string} tagsString - Comma separated tags
+     * @returns {string} - HTML for tags
+     */
+    renderTags(tagsString) {
+        if (!tagsString) return '';
+        
+        const tags = tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
+        return tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('');
     }
     
     /**
@@ -170,11 +322,11 @@ class NotesComponent {
     escapeHtml(unsafe) {
         if (!unsafe) return '';
         return unsafe
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
     
     /**
@@ -214,7 +366,8 @@ class NotesComponent {
             this.currentNoteId = noteId;
             this.noteModal.classList.add('active');
         } catch (error) {
-            toastService.error('Failed to load note: ' + error.message);
+            toastService.error('We were unable to load the note for editing. Please try again later.');
+            console.error('Error loading note for edit:', error);
         }
     }
     
@@ -238,26 +391,27 @@ class NotesComponent {
                 content: this.noteContentInput.value,
                 priority: this.notePriorityInput.value,
                 tags: this.noteTagsInput.value,
-                category_id: this.noteCategoryInput.value
+                category_id: this.noteCategoryInput.value || null
             };
             
             let result;
             
             if (this.currentNoteId) {
-                // Update existing note
+                // Update existing note - include ID in the URL, not in the body
                 result = await apiService.updateNote(this.currentNoteId, noteData);
-                toastService.success('Note updated successfully');
+                toastService.success('Your note has been updated successfully.');
             } else {
-                // Create new note
+                // Create new note - ID will be generated by the server
                 result = await apiService.createNote(noteData);
-                toastService.success('Note created successfully');
+                toastService.success('Your note has been created successfully.');
             }
             
             // Reload notes and close modal
             await this.loadNotes();
             this.closeNoteModal();
         } catch (error) {
-            toastService.error('Failed to save note: ' + error.message);
+            toastService.error('We were unable to save your note. Please try again later.');
+            console.error('Error saving note:', error);
         }
     }
     
@@ -305,10 +459,11 @@ class NotesComponent {
     async deleteNote(noteId) {
         try {
             await apiService.deleteNote(noteId);
-            toastService.success('Note deleted successfully');
+            toastService.success('Your note has been deleted successfully.');
             await this.loadNotes();
         } catch (error) {
-            toastService.error('Failed to delete note: ' + error.message);
+            toastService.error('We were unable to delete your note. Please try again later.');
+            console.error('Error deleting note:', error);
         }
     }
 }

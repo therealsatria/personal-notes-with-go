@@ -10,13 +10,11 @@ import (
 
 type Settings struct {
 	EncryptionKey string `json:"encryption_key"`
-	NotesLimit    int    `json:"notes_limit,omitempty"`
 }
 
 const (
-	settingsFile      = "settings.json"
-	keyLength         = 32 // Length of the encryption key in bytes
-	defaultNotesLimit = 10 // Default limit for notes if not specified
+	settingsFile = "settings.json"
+	keyLength    = 32 // Length of the encryption key in bytes
 )
 
 // LoadSettings loads settings from the settings.json file
@@ -46,11 +44,6 @@ func LoadSettings() (*Settings, error) {
 		return generateAndSaveSettings()
 	}
 
-	// If notes limit is not set, use default
-	if settings.NotesLimit <= 0 {
-		settings.NotesLimit = defaultNotesLimit
-	}
-
 	return &settings, nil
 }
 
@@ -63,7 +56,6 @@ func generateAndSaveSettings() (*Settings, error) {
 	// Create settings with the new key
 	settings := &Settings{
 		EncryptionKey: base64.StdEncoding.EncodeToString(key),
-		NotesLimit:    defaultNotesLimit,
 	}
 
 	// Save to file
@@ -91,12 +83,4 @@ func generateEncryptionKey() []byte {
 // GetEncryptionKey returns the base64-decoded encryption key
 func (s *Settings) GetEncryptionKey() ([]byte, error) {
 	return base64.StdEncoding.DecodeString(s.EncryptionKey)
-}
-
-// GetNotesLimit returns the notes limit, ensuring it's never less than 1
-func (s *Settings) GetNotesLimit() int {
-	if s.NotesLimit <= 0 {
-		return defaultNotesLimit
-	}
-	return s.NotesLimit
 }

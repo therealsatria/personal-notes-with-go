@@ -48,11 +48,23 @@ class CategoriesComponent {
     async loadCategories() {
         try {
             this.categoriesContainer.innerHTML = '<div class="loading">Loading categories...</div>';
-            this.categories = await apiService.getCategories();
+            const categories = await apiService.getCategories();
+            
+            // Ensure categories is always an array, even if API returns null or undefined
+            this.categories = Array.isArray(categories) ? categories : [];
+            
             this.renderCategories();
         } catch (error) {
-            this.categoriesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Failed to load categories</p></div>';
-            toastService.error('Failed to load categories: ' + error.message);
+            this.categoriesContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>We were unable to retrieve your categories at this time.</p>
+                    <button class="btn btn-secondary" onclick="categoriesComponent.loadCategories()">
+                        Try Again
+                    </button>
+                </div>
+            `;
+            console.error('Error loading categories:', error);
         }
     }
     
@@ -60,11 +72,16 @@ class CategoriesComponent {
      * Render all categories in the container
      */
     renderCategories() {
+        // Ensure categories is always an array
+        if (!Array.isArray(this.categories)) {
+            this.categories = [];
+        }
+        
         if (this.categories.length === 0) {
             this.categoriesContainer.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-folder-open"></i>
-                    <p>No categories found. Create your first category!</p>
+                    <p>You don't have any categories yet. Click "Add Category" to create your first category.</p>
                 </div>
             `;
             return;
@@ -146,7 +163,8 @@ class CategoriesComponent {
             this.currentCategoryId = categoryId;
             this.categoryModal.classList.add('active');
         } catch (error) {
-            toastService.error('Failed to load category: ' + error.message);
+            toastService.error('We were unable to load the category for editing. Please try again later.');
+            console.error('Error loading category for edit:', error);
         }
     }
     
@@ -174,11 +192,11 @@ class CategoriesComponent {
             if (this.currentCategoryId) {
                 // Update existing category
                 result = await apiService.updateCategory(this.currentCategoryId, categoryData);
-                toastService.success('Category updated successfully');
+                toastService.success('Your category has been updated successfully.');
             } else {
                 // Create new category
                 result = await apiService.createCategory(categoryData);
-                toastService.success('Category created successfully');
+                toastService.success('Your category has been created successfully.');
             }
             
             // Reload categories and close modal
@@ -190,7 +208,8 @@ class CategoriesComponent {
                 await notesComponent.loadCategories();
             }
         } catch (error) {
-            toastService.error('Failed to save category: ' + error.message);
+            toastService.error('We were unable to save your category. Please try again later.');
+            console.error('Error saving category:', error);
         }
     }
     
@@ -238,7 +257,7 @@ class CategoriesComponent {
     async deleteCategory(categoryId) {
         try {
             await apiService.deleteCategory(categoryId);
-            toastService.success('Category deleted successfully');
+            toastService.success('Your category has been deleted successfully.');
             await this.loadCategories();
             
             // If notes component exists, reload categories there too
@@ -248,7 +267,8 @@ class CategoriesComponent {
                 await notesComponent.loadNotes();
             }
         } catch (error) {
-            toastService.error('Failed to delete category: ' + error.message);
+            toastService.error('We were unable to delete your category. Please try again later.');
+            console.error('Error deleting category:', error);
         }
     }
 }

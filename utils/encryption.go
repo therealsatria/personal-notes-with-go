@@ -11,11 +11,15 @@ import (
 )
 
 var (
-	encryptionKey []byte
+	encryptionKey   []byte
+	encryptionValid bool // Flag to track if encryption is valid
 )
 
 // InitEncryption initializes the encryption system with the key from settings
 func InitEncryption() error {
+	// Reset encryption status
+	encryptionValid = false
+
 	// Load settings
 	s, err := settings.LoadSettings()
 	if err != nil {
@@ -29,17 +33,63 @@ func InitEncryption() error {
 	}
 
 	encryptionKey = key
+
+	// Validate encryption key by performing a test encryption and decryption
+	if err := validateEncryptionKey(); err != nil {
+		return err
+	}
+
+	// If we reach here, encryption is valid
+	encryptionValid = true
 	return nil
+}
+
+// validateEncryptionKey tests if the encryption key is valid by encrypting and decrypting a test string
+func validateEncryptionKey() error {
+	testString := "encryption_test"
+
+	// Try to encrypt
+	encrypted, err := encryptWithKey(testString, encryptionKey)
+	if err != nil {
+		return errors.New("encryption key validation failed: " + err.Error())
+	}
+
+	// Try to decrypt
+	decrypted, err := decryptWithKey(encrypted, encryptionKey)
+	if err != nil {
+		return errors.New("encryption key validation failed: " + err.Error())
+	}
+
+	// Check if decrypted matches original
+	if decrypted != testString {
+		return errors.New("encryption key validation failed: decrypted text does not match original")
+	}
+
+	return nil
+}
+
+// IsEncryptionValid returns whether the encryption system is properly initialized and validated
+func IsEncryptionValid() bool {
+	return encryptionValid
 }
 
 // Encrypt encrypts the given text using AES-256 and returns a base64 encoded string
 func Encrypt(text string) (string, error) {
-	if len(encryptionKey) == 0 {
-		return "", errors.New("encryption key not initialized")
+	if !encryptionValid {
+		return "", errors.New("encryption system not properly initialized")
+	}
+
+	return encryptWithKey(text, encryptionKey)
+}
+
+// encryptWithKey encrypts text with the provided key
+func encryptWithKey(text string, key []byte) (string, error) {
+	if len(key) == 0 {
+		return "", errors.New("encryption key not provided")
 	}
 
 	// Create cipher block
-	block, err := aes.NewCipher(encryptionKey)
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
 	}
@@ -65,8 +115,17 @@ func Encrypt(text string) (string, error) {
 
 // Decrypt decrypts the given base64 encoded ciphertext
 func Decrypt(encryptedText string) (string, error) {
-	if len(encryptionKey) == 0 {
-		return "", errors.New("encryption key not initialized")
+	if !encryptionValid {
+		return "", errors.New("encryption system not properly initialized")
+	}
+
+	return decryptWithKey(encryptedText, encryptionKey)
+}
+
+// decryptWithKey decrypts text with the provided key
+func decryptWithKey(encryptedText string, key []byte) (string, error) {
+	if len(key) == 0 {
+		return "", errors.New("encryption key not provided")
 	}
 
 	// Decode base64
@@ -76,7 +135,7 @@ func Decrypt(encryptedText string) (string, error) {
 	}
 
 	// Create cipher block
-	block, err := aes.NewCipher(encryptionKey)
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
 	}

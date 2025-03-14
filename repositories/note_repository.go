@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"personal-notes-with-go/models"
 	"personal-notes-with-go/utils"
+
+	"github.com/google/uuid"
 )
 
 type NoteRepositoryInterface interface {
@@ -24,6 +26,9 @@ func NewNoteRepository(db *sql.DB) NoteRepositoryInterface {
 }
 
 func (r *noteRepository) Create(note *models.Note) error {
+	// Generate a new UUID for the note
+	note.ID = uuid.New().String()
+
 	// Encrypt sensitive data
 	encryptedContent, err := utils.Encrypt(note.Content)
 	if err != nil {

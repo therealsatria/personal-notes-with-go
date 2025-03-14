@@ -39,7 +39,7 @@ class ApiService {
             // For other responses, parse JSON
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'API request failed');
+                throw new Error(errorData.error || 'API request failed');
             }
             
             return await response.json();
@@ -50,8 +50,12 @@ class ApiService {
     }
 
     // Notes API methods
-    async getNotes() {
-        return this.request('/notes');
+    async getNotes(searchQuery = '') {
+        let endpoint = '/notes';
+        if (searchQuery) {
+            endpoint += `?q=${encodeURIComponent(searchQuery)}`;
+        }
+        return this.request(endpoint);
     }
 
     async getNoteById(id) {
@@ -89,6 +93,16 @@ class ApiService {
 
     async deleteCategory(id) {
         return this.request(`/categories/${id}`, 'DELETE');
+    }
+
+    // Key Generator
+    async generateKey(inputText) {
+        return this.request('/generate-key', 'POST', { text: inputText });
+    }
+
+    // Encryption status
+    async getEncryptionStatus() {
+        return this.request('/encryption/status');
     }
 }
 

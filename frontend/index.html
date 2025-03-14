@@ -8,6 +8,46 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Floating Button for Key Generator -->
+    <div class="floating-navbar">
+        <div class="floating-nav-content">
+            <button id="key-generator-btn" class="btn btn-primary btn-icon" title="Generate New Key">
+                <i class="fas fa-key"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Generator Modal -->
+    <div class="modal" id="key-generator-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Generate New Key</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="key-generator-form">
+                    <div class="form-group">
+                        <label for="key-input">Enter text to generate key:</label>
+                        <input type="text" id="key-input" required placeholder="Enter your text here">
+                    </div>
+                    <div class="form-group">
+                        <label for="generated-key">Generated Base64 Key:</label>
+                        <div class="input-group">
+                            <input type="text" id="generated-key" readonly placeholder="Your key will appear here">
+                            <button type="button" id="copy-key-btn" class="btn btn-secondary btn-icon" title="Copy to Clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Generate Key</button>
+                        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <header>
             <h1>Personal Notes</h1>
@@ -19,14 +59,36 @@
             </nav>
         </header>
 
+        <!-- Encryption Status Banner -->
+        <div id="encryption-status-banner" class="status-banner hidden">
+            <i class="fas fa-shield-alt"></i>
+            <span id="encryption-status-message"></span>
+            <button class="btn-close-banner" title="Dismiss">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
         <main>
             <!-- Notes Page -->
             <section id="notes-page" class="page active">
                 <div class="page-header">
                     <h2>My Notes</h2>
-                    <button id="add-note-btn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Note
-                    </button>
+                    <div class="search-container">
+                        <div class="search-input-wrapper">
+                            <input type="text" id="search-notes" placeholder="Search notes by subject or content...">
+                            <button id="search-clear-btn" class="btn-clear" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="action-buttons">
+                            <button id="show-all-notes-btn" class="btn btn-secondary">
+                                <i class="fas fa-list"></i> Show All
+                            </button>
+                            <button id="add-note-btn" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Note
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="notes-container" id="notes-list">
@@ -140,9 +202,11 @@
         <div id="toast-container"></div>
     </div>
 
-    <!-- JavaScript Files -->
+    <!-- Scripts -->
     <script src="js/services/api.js"></script>
     <script src="js/services/toast.js"></script>
+    <script src="js/services/encryption-status.js"></script>
+    <script src="js/components/key-generator.js"></script>
     <script src="js/components/notes.js"></script>
     <script src="js/components/categories.js"></script>
     <script src="js/app.js"></script>

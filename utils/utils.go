@@ -15,6 +15,7 @@ var (
 	ErrCategoryNotFound     = errors.New("category not found")
 	ErrNoteSubjectEmpty     = errors.New("note subject cannot be empty")
 	ErrNoteNotFound         = errors.New("note not found")
+	ErrEmptyInput           = errors.New("input text cannot be empty")
 )
 
 // HandleBadRequestError handles bad request errors.

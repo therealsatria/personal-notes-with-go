@@ -452,4 +452,365 @@ nav ul li a.active {
     .notes-container, .categories-container {
         grid-template-columns: 1fr;
     }
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#key-generator-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input-group input {
+    flex: 1;
+}
+
+#generated-key {
+    font-family: monospace;
+    background-color: #f5f5f5;
+}
+
+#copy-key-btn {
+    padding: 0.5rem;
+    min-width: 40px;
+}
+
+/* Floating Navbar */
+.floating-navbar {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.floating-nav-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-icon {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.btn-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    background-color: var(--primary-dark);
+}
+
+.btn-icon:active {
+    transform: scale(0.95);
+}
+
+.btn-icon i {
+    font-size: 1.5rem;
+}
+
+/* Pulse animation for the floating button */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(74, 111, 165, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(74, 111, 165, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(74, 111, 165, 0);
+    }
+}
+
+.btn-icon {
+    animation: pulse 2s infinite;
+}
+
+/* Key Generator Modal Styles */
+#key-generator-modal .modal-content {
+    max-width: 450px;
+}
+
+#key-generator-modal .input-group {
+    display: flex;
+    gap: 8px;
+}
+
+#key-generator-modal .input-group input {
+    flex: 1;
+    font-family: monospace;
+}
+
+#key-generator-modal #generated-key {
+    background-color: #f8f9fa;
+    color: var(--dark-color);
+    font-size: 14px;
+}
+
+#key-generator-modal #copy-key-btn {
+    min-width: 40px;
+}
+
+/* Responsive Floating Button */
+@media (max-width: 768px) {
+    .floating-navbar {
+        left: 15px;
+        bottom: 15px;
+    }
+}
+
+/* Search Styles */
+.search-container {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+#search-notes {
+    width: 100%;
+    padding: 8px 35px 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+#search-notes:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+}
+
+.btn-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    cursor: pointer;
+    font-size: 14px;
+    display: none;
+    padding: 0;
+}
+
+.btn-clear:hover {
+    color: var(--danger-color);
+}
+
+.btn-clear.visible {
+    display: block;
+}
+
+/* Highlight search matches */
+.highlight {
+    background-color: rgba(255, 230, 0, 0.4);
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* Responsive search */
+@media (max-width: 768px) {
+    .search-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .page-header {
+        gap: 15px;
+    }
+}
+
+/* Category Badge */
+.category-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+/* Note Card Improvements */
+.note-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.note-card .card-content {
+    flex: 1;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Empty state improvements */
+.empty-state button {
+    margin-top: 15px;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+#show-all-notes-btn {
+    background-color: var(--secondary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#show-all-notes-btn:hover {
+    background-color: #5a6268;
+}
+
+#show-all-notes-btn.active {
+    background-color: var(--success-color);
+}
+
+#show-all-notes-btn.active:hover {
+    background-color: #218838;
+}
+
+/* Responsive search and action buttons */
+@media (max-width: 768px) {
+    .search-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .action-buttons {
+        margin-top: 10px;
+    }
+    
+    .page-header {
+        gap: 15px;
+    }
+}
+
+/* Note Count Info */
+.note-count-info {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    text-align: center;
+    color: var(--secondary-color);
+    font-size: 14px;
+}
+
+.note-count-info a {
+    color: var(--primary-color);
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.note-count-info a:hover {
+    color: var(--primary-dark);
+}
+
+/* Encryption Status Banner */
+.status-banner {
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease-in-out;
+    position: relative;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.status-banner.hidden {
+    display: none;
+}
+
+.status-banner.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-banner.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-banner i {
+    font-size: 1.2rem;
+}
+
+.status-banner span {
+    flex: 1;
+}
+
+.btn-close-banner {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+.btn-close-banner:hover {
+    opacity: 1;
+}
+
+/* Disabled buttons */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 } 
