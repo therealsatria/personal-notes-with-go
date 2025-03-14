@@ -5,12 +5,18 @@ import (
 	"personal-notes-with-go/database"
 	"personal-notes-with-go/handlers"
 	"personal-notes-with-go/repositories"
+	"personal-notes-with-go/utils"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Initialize encryption
+	if err := utils.InitEncryption(); err != nil {
+		log.Fatalf("Failed to initialize encryption: %v", err)
+	}
+
 	// Inisialisasi database
 	db, err := database.InitDB("./db.sqlite3")
 	if err != nil {

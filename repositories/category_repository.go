@@ -10,32 +10,36 @@ import (
 	"github.com/mattn/go-sqlite3"
 )
 
-// CategoryRepository interface mendefinisikan operasi yang dapat dilakukan pada data Category.
-type CategoryRepository interface {
+type CategoryRepositoryInterface interface {
 	Create(category *models.Category) error
 	GetAll() ([]models.Category, error)
+	GetByID(id string) (*models.Category, error)
 	Update(category *models.Category) error
 	Delete(id string) error
 }
 
-// categoryRepository struct mengimplementasikan CategoryRepository interface.
 type categoryRepository struct {
 	db *sql.DB
 }
 
-// NewCategoryRepository membuat instance baru dari CategoryRepository.
-func NewCategoryRepository(db *sql.DB) CategoryRepository {
+func NewCategoryRepository(db *sql.DB) CategoryRepositoryInterface {
 	return &categoryRepository{db: db}
 }
 
-// Create menambahkan kategori baru ke database.
 func (r *categoryRepository) Create(category *models.Category) error {
 	category.ID = uuid.New().String()
-	_, err := r.db.Exec("INSERT INTO categories (id, name) VALUES (?, ?)", category.ID, category.Name)
+
+	// Encrypt name
+	encryptedName, err := utils.Encrypt(category.Name)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt category name: %w", err)
+	}
+
+	_, err = r.db.Exec("INSERT INTO categories (id, name) VALUES (?, ?)", category.ID, encryptedName)
 	if err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok {
-			if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-				return utils.ErrCategoryNameConflict // Mengembalikan error yang lebih spesifik
+			if sqliteErr.Code == sqlite3.ErrConstraint {
+				return utils.ErrCategoryNameConflict
 			}
 		}
 		return fmt.Errorf("failed to create category: %w", err)
@@ -43,7 +47,6 @@ func (r *categoryRepository) Create(category *models.Category) error {
 	return nil
 }
 
-// GetAll mengambil semua kategori dari database.
 func (r *categoryRepository) GetAll() ([]models.Category, error) {
 	rows, err := r.db.Query("SELECT id, name FROM categories")
 	if err != nil {
@@ -54,18 +57,56 @@ func (r *categoryRepository) GetAll() ([]models.Category, error) {
 	var categories []models.Category
 	for rows.Next() {
 		var cat models.Category
-		if err := rows.Scan(&cat.ID, &cat.Name); err != nil {
+		var encryptedName string
+		if err := rows.Scan(&cat.ID, &encryptedName); err != nil {
 			return nil, fmt.Errorf("failed to scan category: %w", err)
 		}
+
+		// Decrypt name
+		cat.Name, err = utils.Decrypt(encryptedName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt category name: %w", err)
+		}
+
 		categories = append(categories, cat)
 	}
 	return categories, nil
 }
 
-// Update memperbarui kategori yang ada di database.
-func (r *categoryRepository) Update(category *models.Category) error {
-	result, err := r.db.Exec("UPDATE categories SET name = ? WHERE id = ?", category.Name, category.ID)
+func (r *categoryRepository) GetByID(id string) (*models.Category, error) {
+	var category models.Category
+	var encryptedName string
+	err := r.db.QueryRow("SELECT id, name FROM categories WHERE id = ?", id).Scan(&category.ID, &encryptedName)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, utils.ErrCategoryNotFound
+		}
+		return nil, fmt.Errorf("failed to get category: %w", err)
+	}
+
+	// Decrypt name
+	category.Name, err = utils.Decrypt(encryptedName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt category name: %w", err)
+	}
+
+	return &category, nil
+}
+
+func (r *categoryRepository) Update(category *models.Category) error {
+	// Encrypt name
+	encryptedName, err := utils.Encrypt(category.Name)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt category name: %w", err)
+	}
+
+	result, err := r.db.Exec("UPDATE categories SET name = ? WHERE id = ?", encryptedName, category.ID)
+	if err != nil {
+		if sqliteErr, ok := err.(sqlite3.Error); ok {
+			if sqliteErr.Code == sqlite3.ErrConstraint {
+				return utils.ErrCategoryNameConflict
+			}
+		}
 		return fmt.Errorf("failed to update category: %w", err)
 	}
 
@@ -74,13 +115,12 @@ func (r *categoryRepository) Update(category *models.Category) error {
 		return fmt.Errorf("failed to get affected rows: %w", err)
 	}
 	if rowsAffected == 0 {
-		return utils.ErrCategoryNotFound // Mengembalikan error not found
+		return utils.ErrCategoryNotFound
 	}
 
 	return nil
 }
 
-// Delete menghapus kategori dari database berdasarkan ID.
 func (r *categoryRepository) Delete(id string) error {
 	result, err := r.db.Exec("DELETE FROM categories WHERE id = ?", id)
 	if err != nil {
@@ -92,7 +132,7 @@ func (r *categoryRepository) Delete(id string) error {
 		return fmt.Errorf("failed to get affected rows: %w", err)
 	}
 	if rowsAffected == 0 {
-		return utils.ErrCategoryNotFound // Mengembalikan error not found
+		return utils.ErrCategoryNotFound
 	}
 
 	return nil

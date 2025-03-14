@@ -10,10 +10,10 @@ import (
 )
 
 type CategoryHandler struct {
-	repo repositories.CategoryRepository
+	repo repositories.CategoryRepositoryInterface
 }
 
-func NewCategoryHandler(repo repositories.CategoryRepository) *CategoryHandler {
+func NewCategoryHandler(repo repositories.CategoryRepositoryInterface) *CategoryHandler {
 	return &CategoryHandler{repo: repo}
 }
 

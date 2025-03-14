@@ -10,10 +10,10 @@ import (
 )
 
 type NoteHandler struct {
-	repo repositories.NoteRepository
+	repo repositories.NoteRepositoryInterface
 }
 
-func NewNoteHandler(repo repositories.NoteRepository) *NoteHandler {
+func NewNoteHandler(repo repositories.NoteRepositoryInterface) *NoteHandler {
 	return &NoteHandler{repo: repo}
 }
 
@@ -38,10 +38,7 @@ func (h *NoteHandler) CreateNote(c *gin.Context) {
 }
 
 func (h *NoteHandler) GetNotes(c *gin.Context) {
-	priority := c.Query("priority")
-	categoryID := c.Query("category_id")
-
-	notes, err := h.repo.GetAll(priority, categoryID)
+	notes, err := h.repo.GetAll()
 	if err != nil {
 		utils.HandleInternalServerError(c, err, "get notes")
 		return

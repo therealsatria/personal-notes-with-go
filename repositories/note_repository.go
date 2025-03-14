@@ -1,100 +1,78 @@
 package repositories
-import (
-	"os"
-)
 
 import (
 	"database/sql"
 	"fmt"
 	"personal-notes-with-go/models"
 	"personal-notes-with-go/utils"
-	"strings"
-
-	"github.com/google/uuid"
 )
 
-type NoteRepository interface {
+type NoteRepositoryInterface interface {
 	Create(note *models.Note) error
-	GetAll(priority, categoryID string) ([]models.Note, error)
+	GetAll() ([]*models.Note, error)
+	GetByID(id string) (*models.Note, error)
 	Update(note *models.Note) error
 	Delete(id string) error
 }
 
 type noteRepository struct {
-	db          *sql.DB
-	keyFilePath string // Tambahkan keyFilePath
+	db *sql.DB
 }
 
-func NewNoteRepository(db *sql.DB) NoteRepository {
-	// Pastikan file kunci enkripsi ada
-	keyFilePath := "./encryption.key"
-	if _, err := os.Stat(keyFilePath); err != nil {
-		panic(fmt.Sprintf("Encryption key file not found: %v", err))
-	}
-	return &noteRepository{db: db, keyFilePath: keyFilePath}
+func NewNoteRepository(db *sql.DB) NoteRepositoryInterface {
+	return &noteRepository{db: db}
 }
 
 func (r *noteRepository) Create(note *models.Note) error {
-	note.ID = uuid.New().String()
-
-	// Enkripsi Subject dan Content
-	encryptedSubject, err := utils.EncryptString(note.Subject, r.keyFilePath)
+	// Encrypt sensitive data
+	encryptedContent, err := utils.Encrypt(note.Content)
 	if err != nil {
-		return fmt.Errorf("failed to encrypt subject: %w", err)
-	}
-	encryptedContent, err := utils.EncryptString(note.Content, r.keyFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt content: %w", err)
+		return fmt.Errorf("failed to encrypt note content: %w", err)
 	}
 
-	_, err = r.db.Exec("INSERT INTO notes (id, subject, content, priority, tags, category_id) VALUES (?, ?, ?, ?, ?, ?)",
-		note.ID, encryptedSubject, encryptedContent, note.Priority, note.Tags, note.CategoryID)
+	encryptedTags, err := utils.Encrypt(note.Tags)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt note tags: %w", err)
+	}
+
+	// Insert into database
+	query := `
+		INSERT INTO notes (id, subject, content, priority, tags, category_id)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+	_, err = r.db.Exec(query, note.ID, note.Subject, encryptedContent, note.Priority, encryptedTags, note.CategoryID)
 	if err != nil {
 		return fmt.Errorf("failed to create note: %w", err)
 	}
 	return nil
 }
 
-func (r *noteRepository) GetAll(priority, categoryID string) ([]models.Note, error) {
-	query := "SELECT id, subject, content, priority, tags, category_id FROM notes"
-	var args []interface{}
-	var conditions []string
-
-	if priority != "" {
-		conditions = append(conditions, "priority = ?")
-		args = append(args, priority)
-	}
-	if categoryID != "" {
-		conditions = append(conditions, "category_id = ?")
-		args = append(args, categoryID)
-	}
-
-	if len(conditions) > 0 {
-		query += " WHERE " + strings.Join(conditions, " AND ")
-	}
-
-	rows, err := r.db.Query(query, args...)
+func (r *noteRepository) GetAll() ([]*models.Note, error) {
+	query := `SELECT id, subject, content, priority, tags, category_id FROM notes`
+	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get notes: %w", err)
 	}
 	defer rows.Close()
 
-	var notes []models.Note
+	var notes []*models.Note
 	for rows.Next() {
-		var note models.Note
-		var encryptedSubject, encryptedContent string
-		if err := rows.Scan(&note.ID, &encryptedSubject, &encryptedContent, &note.Priority, &note.Tags, &note.CategoryID); err != nil {
+		note := &models.Note{}
+		var encryptedContent, encryptedTags string
+		err := rows.Scan(&note.ID, &note.Subject, &encryptedContent, &note.Priority, &encryptedTags, &note.CategoryID)
+		if err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
 
-		// Dekripsi Subject dan Content
-		note.Subject, err = utils.DecryptString(encryptedSubject, r.keyFilePath)
+		// Decrypt sensitive data
+		note.Content, err = utils.Decrypt(encryptedContent)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decrypt subject: %w", err)
+			return nil, fmt.Errorf("failed to decrypt note content: %w", err)
 		}
-		note.Content, err = utils.DecryptString(encryptedContent, r.keyFilePath)
+
+		note.Tags, err = utils.Decrypt(encryptedTags)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decrypt content: %w", err)
+			return nil, fmt.Errorf("failed to decrypt note tags: %w", err)
 		}
 
 		notes = append(notes, note)
@@ -103,19 +81,50 @@ func (r *noteRepository) GetAll(priority, categoryID string) ([]models.Note, err
 	return notes, nil
 }
 
-func (r *noteRepository) Update(note *models.Note) error {
-	// Enkripsi Subject dan Content
-	encryptedSubject, err := utils.EncryptString(note.Subject, r.keyFilePath)
+func (r *noteRepository) GetByID(id string) (*models.Note, error) {
+	query := `SELECT id, subject, content, priority, tags, category_id FROM notes WHERE id = ?`
+	note := &models.Note{}
+	var encryptedContent, encryptedTags string
+	err := r.db.QueryRow(query, id).Scan(&note.ID, &note.Subject, &encryptedContent, &note.Priority, &encryptedTags, &note.CategoryID)
 	if err != nil {
-		return fmt.Errorf("failed to encrypt subject: %w", err)
-	}
-	encryptedContent, err := utils.EncryptString(note.Content, r.keyFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt content: %w", err)
+		if err == sql.ErrNoRows {
+			return nil, utils.ErrNoteNotFound
+		}
+		return nil, fmt.Errorf("failed to get note: %w", err)
 	}
 
-	result, err := r.db.Exec("UPDATE notes SET subject = ?, content = ?, priority = ?, tags = ?, category_id = ? WHERE id = ?",
-		encryptedSubject, encryptedContent, note.Priority, note.Tags, note.CategoryID, note.ID)
+	// Decrypt sensitive data
+	note.Content, err = utils.Decrypt(encryptedContent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt note content: %w", err)
+	}
+
+	note.Tags, err = utils.Decrypt(encryptedTags)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt note tags: %w", err)
+	}
+
+	return note, nil
+}
+
+func (r *noteRepository) Update(note *models.Note) error {
+	// Encrypt sensitive data
+	encryptedContent, err := utils.Encrypt(note.Content)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt note content: %w", err)
+	}
+
+	encryptedTags, err := utils.Encrypt(note.Tags)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt note tags: %w", err)
+	}
+
+	query := `
+		UPDATE notes
+		SET subject = ?, content = ?, priority = ?, tags = ?, category_id = ?
+		WHERE id = ?
+	`
+	result, err := r.db.Exec(query, note.Subject, encryptedContent, note.Priority, encryptedTags, note.CategoryID, note.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update note: %w", err)
 	}
