@@ -27,31 +27,11 @@ curl -X POST -H "Content-Type: application/json" -d '{"subject": "Belajar Golang
 curl -X POST -H "Content-Type: application/json" -d '{"subject": "Membeli Kebutuhan", "content": "Membeli sabun dan sampo", "priority": "Low", "tags": "belanja", "category_id": "cea0ecd6-1e6b-40b6-9f05-2fa29e519574"}' http://localhost:8080/notes
 
 # Catatan 4: Desain UI/UX (Kategori: Proyek)
-curl -X POST -H "Content-Type: application/json" -d '{"subject": "Desain UI/UX", "content": "Membuat desain wireframe", "priority": "High", "tags": "desain,uiux", "category_id": "12446b37-fb41-4496-b3bf-e54123f1e105"}' http://localhost:8080/notes
+curl -X POST -H "Content-Type: application/json" -d '{"subject": "Desain UI/UX", "content": "Membuat desain wireframe", "priority": "High", "tags": "desain,uiux", "category_id": "0882d4b8-13cd-4ec8-8d76-2e5675dc6ff3"}' http://localhost:8080/notes
 
 # Catatan 5: Bermain Gitar (Kategori: Hobi)
 curl -X POST -H "Content-Type: application/json" -d '{"subject": "Bermain Gitar", "content": "Berlatih lagu baru", "priority": "Medium", "tags": "musik,gitar", "category_id": "0e99a024-c7d4-4f10-8e0e-5a865c0d1b26"}' http://localhost:8080/notes
 
 
-[
-  {
-    "id": "cd2f5422-d223-476f-b8d1-da6ec24107af",
-    "name": "Pekerjaan"
-  },
-  {
-    "id": "98b8c5f4-c0d1-4dcf-bd9a-5715d19b1443",
-    "name": "Pribadi"
-  },
-  {
-    "id": "cea0ecd6-1e6b-40b6-9f05-2fa29e519574",
-    "name": "Kuliah"
-  },
-  {
-    "id": "12446b37-fb41-4496-b3bf-e54123f1e105",
-    "name": "Proyek"
-  },
-  {
-    "id": "0e99a024-c7d4-4f10-8e0e-5a865c0d1b26",
-    "name": "Hobi"
-  }
-]
+# Catatan 4: Desain UI/UX (Kategori: Proyek)
+curl -X POST -H "Content-Type: application/json" -d '{"subject": "coding back end", "content": "Membuat aplikasi note dengan golang dengan framework gin yang menerapkan clean code konsep dan design pattern dan dependency injection untuk keperluan pribadi sehari - hari", "priority": "High", "tags": "desain,uiux", "category_id": "0882d4b8-13cd-4ec8-8d76-2e5675dc6ff3"}' http://localhost:8080/notes

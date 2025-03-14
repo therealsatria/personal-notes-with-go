@@ -1,4 +1,7 @@
 package repositories
+import (
+	"os"
+)
 
 import (
 	"database/sql"
@@ -10,7 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// NoteRepository interface mendefinisikan operasi yang dapat dilakukan pada data Note.
 type NoteRepository interface {
 	Create(note *models.Note) error
 	GetAll(priority, categoryID string) ([]models.Note, error)
@@ -18,28 +20,41 @@ type NoteRepository interface {
 	Delete(id string) error
 }
 
-// noteRepository struct mengimplementasikan NoteRepository interface.
 type noteRepository struct {
-	db *sql.DB
+	db          *sql.DB
+	keyFilePath string // Tambahkan keyFilePath
 }
 
-// NewNoteRepository membuat instance baru dari NoteRepository.
 func NewNoteRepository(db *sql.DB) NoteRepository {
-	return &noteRepository{db: db}
+	// Pastikan file kunci enkripsi ada
+	keyFilePath := "./encryption.key"
+	if _, err := os.Stat(keyFilePath); err != nil {
+		panic(fmt.Sprintf("Encryption key file not found: %v", err))
+	}
+	return &noteRepository{db: db, keyFilePath: keyFilePath}
 }
 
-// Create menambahkan catatan baru ke database.
 func (r *noteRepository) Create(note *models.Note) error {
 	note.ID = uuid.New().String()
-	_, err := r.db.Exec("INSERT INTO notes (id, subject, content, priority, tags, category_id) VALUES (?, ?, ?, ?, ?, ?)",
-		note.ID, note.Subject, note.Content, note.Priority, note.Tags, note.CategoryID)
+
+	// Enkripsi Subject dan Content
+	encryptedSubject, err := utils.EncryptString(note.Subject, r.keyFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt subject: %w", err)
+	}
+	encryptedContent, err := utils.EncryptString(note.Content, r.keyFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt content: %w", err)
+	}
+
+	_, err = r.db.Exec("INSERT INTO notes (id, subject, content, priority, tags, category_id) VALUES (?, ?, ?, ?, ?, ?)",
+		note.ID, encryptedSubject, encryptedContent, note.Priority, note.Tags, note.CategoryID)
 	if err != nil {
 		return fmt.Errorf("failed to create note: %w", err)
 	}
 	return nil
 }
 
-// GetAll mengambil semua catatan dari database, dengan filter opsional.
 func (r *noteRepository) GetAll(priority, categoryID string) ([]models.Note, error) {
 	query := "SELECT id, subject, content, priority, tags, category_id FROM notes"
 	var args []interface{}
@@ -67,19 +82,40 @@ func (r *noteRepository) GetAll(priority, categoryID string) ([]models.Note, err
 	var notes []models.Note
 	for rows.Next() {
 		var note models.Note
-		if err := rows.Scan(&note.ID, &note.Subject, &note.Content, &note.Priority, &note.Tags, &note.CategoryID); err != nil {
+		var encryptedSubject, encryptedContent string
+		if err := rows.Scan(&note.ID, &encryptedSubject, &encryptedContent, &note.Priority, &note.Tags, &note.CategoryID); err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
+
+		// Dekripsi Subject dan Content
+		note.Subject, err = utils.DecryptString(encryptedSubject, r.keyFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt subject: %w", err)
+		}
+		note.Content, err = utils.DecryptString(encryptedContent, r.keyFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt content: %w", err)
+		}
+
 		notes = append(notes, note)
 	}
 
 	return notes, nil
 }
 
-// Update memperbarui catatan yang ada di database.
 func (r *noteRepository) Update(note *models.Note) error {
+	// Enkripsi Subject dan Content
+	encryptedSubject, err := utils.EncryptString(note.Subject, r.keyFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt subject: %w", err)
+	}
+	encryptedContent, err := utils.EncryptString(note.Content, r.keyFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt content: %w", err)
+	}
+
 	result, err := r.db.Exec("UPDATE notes SET subject = ?, content = ?, priority = ?, tags = ?, category_id = ? WHERE id = ?",
-		note.Subject, note.Content, note.Priority, note.Tags, note.CategoryID, note.ID)
+		encryptedSubject, encryptedContent, note.Priority, note.Tags, note.CategoryID, note.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update note: %w", err)
 	}
@@ -95,7 +131,6 @@ func (r *noteRepository) Update(note *models.Note) error {
 	return nil
 }
 
-// Delete menghapus catatan dari database berdasarkan ID.
 func (r *noteRepository) Delete(id string) error {
 	result, err := r.db.Exec("DELETE FROM notes WHERE id = ?", id)
 	if err != nil {
