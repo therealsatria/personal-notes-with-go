@@ -15,6 +15,7 @@ type NoteRepositoryInterface interface {
 	GetByID(id string) (*models.Note, error)
 	Update(note *models.Note) error
 	Delete(id string) error
+	GetByCategoryID(categoryID string) ([]*models.Note, error)
 }
 
 type noteRepository struct {
@@ -29,23 +30,15 @@ func (r *noteRepository) Create(note *models.Note) error {
 	// Generate a new UUID for the note
 	note.ID = uuid.New().String()
 
-	// Encrypt sensitive data
-	encryptedContent, err := utils.Encrypt(note.Content)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt note content: %w", err)
-	}
-
-	encryptedTags, err := utils.Encrypt(note.Tags)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt note tags: %w", err)
-	}
+	// Note: All encryption is now done in the handler
+	// We just insert the already encrypted data
 
 	// Insert into database
 	query := `
 		INSERT INTO notes (id, subject, content, priority, tags, category_id)
 		VALUES (?, ?, ?, ?, ?, ?)
 	`
-	_, err = r.db.Exec(query, note.ID, note.Subject, encryptedContent, note.Priority, encryptedTags, note.CategoryID)
+	_, err := r.db.Exec(query, note.ID, note.Subject, note.Content, note.Priority, note.Tags, note.CategoryID)
 	if err != nil {
 		return fmt.Errorf("failed to create note: %w", err)
 	}
@@ -63,22 +56,16 @@ func (r *noteRepository) GetAll() ([]*models.Note, error) {
 	var notes []*models.Note
 	for rows.Next() {
 		note := &models.Note{}
-		var encryptedContent, encryptedTags string
-		err := rows.Scan(&note.ID, &note.Subject, &encryptedContent, &note.Priority, &encryptedTags, &note.CategoryID)
+		var encryptedSubject, encryptedContent, encryptedTags string
+		err := rows.Scan(&note.ID, &encryptedSubject, &encryptedContent, &note.Priority, &encryptedTags, &note.CategoryID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
 
-		// Decrypt sensitive data
-		note.Content, err = utils.Decrypt(encryptedContent)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decrypt note content: %w", err)
-		}
-
-		note.Tags, err = utils.Decrypt(encryptedTags)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decrypt note tags: %w", err)
-		}
+		// Store encrypted values for handler to decrypt
+		note.Subject = encryptedSubject
+		note.Content = encryptedContent
+		note.Tags = encryptedTags
 
 		notes = append(notes, note)
 	}
@@ -89,8 +76,8 @@ func (r *noteRepository) GetAll() ([]*models.Note, error) {
 func (r *noteRepository) GetByID(id string) (*models.Note, error) {
 	query := `SELECT id, subject, content, priority, tags, category_id FROM notes WHERE id = ?`
 	note := &models.Note{}
-	var encryptedContent, encryptedTags string
-	err := r.db.QueryRow(query, id).Scan(&note.ID, &note.Subject, &encryptedContent, &note.Priority, &encryptedTags, &note.CategoryID)
+	var encryptedSubject, encryptedContent, encryptedTags string
+	err := r.db.QueryRow(query, id).Scan(&note.ID, &encryptedSubject, &encryptedContent, &note.Priority, &encryptedTags, &note.CategoryID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, utils.ErrNoteNotFound
@@ -98,38 +85,24 @@ func (r *noteRepository) GetByID(id string) (*models.Note, error) {
 		return nil, fmt.Errorf("failed to get note: %w", err)
 	}
 
-	// Decrypt sensitive data
-	note.Content, err = utils.Decrypt(encryptedContent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt note content: %w", err)
-	}
-
-	note.Tags, err = utils.Decrypt(encryptedTags)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt note tags: %w", err)
-	}
+	// Store encrypted values for handler to decrypt
+	note.Subject = encryptedSubject
+	note.Content = encryptedContent
+	note.Tags = encryptedTags
 
 	return note, nil
 }
 
 func (r *noteRepository) Update(note *models.Note) error {
-	// Encrypt sensitive data
-	encryptedContent, err := utils.Encrypt(note.Content)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt note content: %w", err)
-	}
-
-	encryptedTags, err := utils.Encrypt(note.Tags)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt note tags: %w", err)
-	}
+	// Note: All encryption is now done in the handler
+	// We just update with the already encrypted data
 
 	query := `
 		UPDATE notes
 		SET subject = ?, content = ?, priority = ?, tags = ?, category_id = ?
 		WHERE id = ?
 	`
-	result, err := r.db.Exec(query, note.Subject, encryptedContent, note.Priority, encryptedTags, note.CategoryID, note.ID)
+	result, err := r.db.Exec(query, note.Subject, note.Content, note.Priority, note.Tags, note.CategoryID, note.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update note: %w", err)
 	}
@@ -160,4 +133,38 @@ func (r *noteRepository) Delete(id string) error {
 	}
 
 	return nil
+}
+
+// GetByCategoryID returns all notes for a specific category
+func (r *noteRepository) GetByCategoryID(categoryID string) ([]*models.Note, error) {
+	query := `SELECT id, subject, content, priority, tags, category_id FROM notes WHERE category_id = ?`
+
+	rows, err := r.db.Query(query, categoryID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query notes by category ID: %w", err)
+	}
+	defer rows.Close()
+
+	var notes []*models.Note
+	for rows.Next() {
+		note := &models.Note{}
+		var encryptedSubject, encryptedContent, encryptedTags string
+		err := rows.Scan(&note.ID, &encryptedSubject, &encryptedContent, &note.Priority, &encryptedTags, &note.CategoryID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan note row: %w", err)
+		}
+
+		// Store encrypted values for handler to decrypt
+		note.Subject = encryptedSubject
+		note.Content = encryptedContent
+		note.Tags = encryptedTags
+
+		notes = append(notes, note)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating note rows: %w", err)
+	}
+
+	return notes, nil
 }

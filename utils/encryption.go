@@ -6,8 +6,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"personal-notes-with-go/settings"
+	"strings"
 )
 
 var (
@@ -79,6 +81,11 @@ func Encrypt(text string) (string, error) {
 		return "", errors.New("encryption system not properly initialized")
 	}
 
+	// Handle empty text case
+	if text == "" {
+		return "", nil
+	}
+
 	return encryptWithKey(text, encryptionKey)
 }
 
@@ -119,7 +126,53 @@ func Decrypt(encryptedText string) (string, error) {
 		return "", errors.New("encryption system not properly initialized")
 	}
 
+	// Handle empty text case
+	if encryptedText == "" {
+		return "", nil
+	}
+
+	// Check if the text is actually encrypted (should be base64)
+	if !IsBase64(encryptedText) {
+		// If it's not encrypted, return as is
+		return encryptedText, nil
+	}
+
 	return decryptWithKey(encryptedText, encryptionKey)
+}
+
+// IsBase64 checks if a string is base64 encoded
+func IsBase64(s string) bool {
+	_, err := base64.StdEncoding.DecodeString(s)
+	return err == nil && strings.TrimSpace(s) != ""
+}
+
+// SafeDecrypt attempts to decrypt text but returns the original if decryption fails
+func SafeDecrypt(encryptedText string) string {
+	// Handle empty text case
+	if encryptedText == "" {
+		return ""
+	}
+
+	// If encryption is not valid, return original
+	if !encryptionValid {
+		return encryptedText
+	}
+
+	// Check if the text is actually encrypted (should be base64)
+	if !IsBase64(encryptedText) {
+		// If it's not encrypted, return as is
+		return encryptedText
+	}
+
+	// Try to decrypt
+	decrypted, err := decryptWithKey(encryptedText, encryptionKey)
+	if err != nil {
+		// If decryption fails, return original
+		fmt.Printf("Warning: Failed to decrypt text, returning original: %v\n", err)
+		return encryptedText
+	}
+
+	return decrypted
 }
 
 // decryptWithKey decrypts text with the provided key

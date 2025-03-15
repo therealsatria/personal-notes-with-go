@@ -4,15 +4,18 @@ Aplikasi Personal Notes adalah aplikasi manajemen catatan pribadi yang aman deng
 
 ## Fitur Utama
 
-- **Enkripsi End-to-End**: Semua catatan dienkripsi menggunakan AES-256 dengan encoding Base64
-- **Manajemen Kunci Enkripsi**: Kunci enkripsi disimpan dalam file `settings.json` dan dapat diperbarui
-- **Validasi Enkripsi**: Sistem validasi untuk memastikan kunci enkripsi berfungsi dengan benar
-- **Manajemen Kategori**: Pengelompokan catatan berdasarkan kategori
-- **Pencarian**: Pencarian catatan berdasarkan subjek dan konten
-- **Prioritas**: Penandaan prioritas catatan (rendah, sedang, tinggi)
-- **Tag**: Penambahan tag pada catatan untuk pengorganisasian lebih lanjut
-- **Pembatasan Data**: Opsi untuk membatasi jumlah catatan yang ditampilkan
-- **Antarmuka Pengguna Responsif**: Tampilan yang responsif untuk berbagai ukuran layar
+- **End-to-End Encryption**: Semua data sensitif dienkripsi menggunakan AES-256 dan Base64 encoding.
+- **Key Management**: Antarmuka untuk menghasilkan dan mengelola kunci enkripsi.
+- **Validasi Keamanan**: Indikator status enkripsi dan pembatasan akses.
+- **Manajemen Catatan**: Operasi CRUD lengkap untuk catatan dengan prioritas dan tag.
+- **Manajemen Kategori**: Organisasi catatan berdasarkan kategori.
+- **Pencarian**: Kemampuan mencari catatan berdasarkan subjek dan konten.
+- **Pembatasan Data**: Opsi untuk membatasi jumlah catatan yang ditampilkan.
+- **Activity Logging**: Pencatatan semua aktivitas sistem dengan timestamp dan informasi klien.
+- **UI Responsif**: Antarmuka pengguna modern yang bekerja di berbagai perangkat.
+- **Notifikasi Toast**: Umpan balik pengguna melalui notifikasi toast.
+- **Dialog Modal**: Form dan konfirmasi menggunakan dialog modal.
+- **Penanganan Error**: Pesan error yang informatif dan penanganan kesalahan yang baik.
 
 ## Teknologi
 
@@ -26,159 +29,127 @@ Aplikasi Personal Notes adalah aplikasi manajemen catatan pribadi yang aman deng
 
 ```
 personal-notes-with-go/
-├── database/         # Inisialisasi dan konfigurasi database
-├── frontend/         # Antarmuka pengguna (HTML, CSS, JS)
-├── handlers/         # Handler HTTP untuk endpoint API
-├── models/           # Model data
-├── repositories/     # Akses dan manipulasi data
-├── settings/         # Konfigurasi aplikasi dan manajemen kunci
-├── utils/            # Utilitas umum (enkripsi, error handling)
-├── main.go           # Entry point aplikasi
-├── settings.json     # File konfigurasi
-└── db.sqlite3        # Database SQLite
+├── database/
+│   └── db.go                  # Inisialisasi database dan pembuatan tabel
+├── frontend/                  # Aplikasi frontend
+├── handlers/
+│   ├── activity_log_handler.go # Handler untuk log aktivitas
+│   ├── category_handler.go    # Handler untuk kategori
+│   ├── encryption_handler.go  # Handler untuk status enkripsi
+│   ├── key_handler.go         # Handler untuk generasi kunci
+│   └── note_handler.go        # Handler untuk catatan
+├── models/
+│   ├── activity_log.go        # Model untuk log aktivitas
+│   ├── category.go            # Model untuk kategori
+│   └── note.go                # Model untuk catatan
+├── repositories/
+│   ├── activity_log_repository.go # Repository untuk log aktivitas
+│   ├── category_repository.go # Repository untuk kategori
+│   └── note_repository.go     # Repository untuk catatan
+├── settings/
+│   └── settings.go            # Pengaturan aplikasi
+├── utils/
+│   ├── encryption.go          # Utilitas enkripsi
+│   └── errors.go              # Penanganan error
+├── main.go                    # Entry point aplikasi
+├── go.mod                     # Dependensi Go
+├── go.sum                     # Checksum dependensi
+└── settings.json              # File konfigurasi
 ```
 
 ## Endpoint API
 
-### Status Enkripsi
+### Encryption Status
 
-- **`GET /encryption/status`**
-  - **Deskripsi**: Memeriksa status sistem enkripsi
-  - **Respons**:
-    - `200 OK`: Status enkripsi
-    ```json
-    {
-      "encryption_valid": true,
-      "message": "Encryption system is properly initialized and working correctly."
-    }
-    ```
+- **GET /encryption/status**: Mendapatkan status enkripsi saat ini
+  - Response: `{"encryption_valid": true|false, "message": "..."}`
 
-### Catatan (Notes)
+### Notes
 
-- **`POST /notes`**
-  - **Deskripsi**: Membuat catatan baru
-  - **Memerlukan Enkripsi Valid**: Ya
-  - **Request Body**:
-    ```json
-    {
-      "subject": "Judul Catatan",
-      "content": "Isi catatan",
-      "priority": "medium",
-      "tags": "tag1, tag2",
-      "category_id": "id-kategori"
-    }
-    ```
-  - **Respons**:
-    - `201 Created`: Catatan berhasil dibuat
-    - `400 Bad Request`: Request tidak valid
-    - `403 Forbidden`: Enkripsi tidak valid
-    - `500 Internal Server Error`: Kesalahan server
+- **GET /notes**: Mendapatkan semua catatan
+  - Query Parameters:
+    - `category_id`: Filter berdasarkan kategori
+    - `all`: Jika "true", tampilkan semua catatan tanpa batasan
+    - `limit`: Jumlah maksimum catatan yang dikembalikan
+  - Response: Array dari objek Note
 
-- **`GET /notes`**
-  - **Deskripsi**: Mengambil semua catatan
-  - **Parameter Query**:
-    - `q`: Kata kunci pencarian (opsional)
-    - `all`: Jika "true", menampilkan semua catatan; jika tidak, terbatas sesuai pengaturan (opsional)
-  - **Respons**:
-    - `200 OK`: Daftar catatan
-    - `500 Internal Server Error`: Kesalahan server
+- **POST /notes**: Membuat catatan baru
+  - Request Body: `{"subject": "...", "content": "...", "priority": "...", "tags": "...", "category_id": "..."}`
+  - Response: Objek Note yang dibuat
 
-- **`PUT /notes/{id}`**
-  - **Deskripsi**: Memperbarui catatan berdasarkan ID
-  - **Memerlukan Enkripsi Valid**: Ya
-  - **Request Body**:
-    ```json
-    {
-      "subject": "Judul Catatan Diperbarui",
-      "content": "Isi catatan diperbarui",
-      "priority": "high",
-      "tags": "tag1, tag2, tag3",
-      "category_id": "id-kategori"
-    }
-    ```
-  - **Respons**:
-    - `200 OK`: Catatan berhasil diperbarui
-    - `400 Bad Request`: Request tidak valid
-    - `403 Forbidden`: Enkripsi tidak valid
-    - `404 Not Found`: Catatan tidak ditemukan
-    - `500 Internal Server Error`: Kesalahan server
+- **PUT /notes/:id**: Memperbarui catatan yang ada
+  - Request Body: `{"subject": "...", "content": "...", "priority": "...", "tags": "...", "category_id": "..."}`
+  - Response: Objek Note yang diperbarui
 
-- **`DELETE /notes/{id}`**
-  - **Deskripsi**: Menghapus catatan berdasarkan ID
-  - **Memerlukan Enkripsi Valid**: Ya
-  - **Respons**:
-    - `200 OK`: Catatan berhasil dihapus
-    - `403 Forbidden`: Enkripsi tidak valid
-    - `404 Not Found`: Catatan tidak ditemukan
-    - `500 Internal Server Error`: Kesalahan server
+- **DELETE /notes/:id**: Menghapus catatan
+  - Response: `{"message": "Note deleted successfully"}`
 
-### Kategori (Categories)
+### Categories
 
-- **`POST /categories`**
-  - **Deskripsi**: Membuat kategori baru
-  - **Memerlukan Enkripsi Valid**: Ya
-  - **Request Body**:
-    ```json
-    {
-      "name": "Nama Kategori"
-    }
-    ```
-  - **Respons**:
-    - `201 Created`: Kategori berhasil dibuat
-    - `400 Bad Request`: Request tidak valid
-    - `403 Forbidden`: Enkripsi tidak valid
-    - `500 Internal Server Error`: Kesalahan server
+- **GET /categories**: Mendapatkan semua kategori
+  - Response: Array dari objek Category
 
-- **`GET /categories`**
-  - **Deskripsi**: Mengambil semua kategori
-  - **Respons**:
-    - `200 OK`: Daftar kategori
-    - `500 Internal Server Error`: Kesalahan server
+- **POST /categories**: Membuat kategori baru
+  - Request Body: `{"name": "..."}`
+  - Response: Objek Category yang dibuat
 
-- **`PUT /categories/{id}`**
-  - **Deskripsi**: Memperbarui kategori berdasarkan ID
-  - **Memerlukan Enkripsi Valid**: Ya
-  - **Request Body**:
-    ```json
-    {
-      "name": "Nama Kategori Diperbarui"
-    }
-    ```
-  - **Respons**:
-    - `200 OK`: Kategori berhasil diperbarui
-    - `400 Bad Request`: Request tidak valid
-    - `403 Forbidden`: Enkripsi tidak valid
-    - `404 Not Found`: Kategori tidak ditemukan
-    - `500 Internal Server Error`: Kesalahan server
+- **PUT /categories/:id**: Memperbarui kategori yang ada
+  - Request Body: `{"name": "..."}`
+  - Response: Objek Category yang diperbarui
 
-- **`DELETE /categories/{id}`**
-  - **Deskripsi**: Menghapus kategori berdasarkan ID
-  - **Memerlukan Enkripsi Valid**: Ya
-  - **Respons**:
-    - `200 OK`: Kategori berhasil dihapus
-    - `403 Forbidden`: Enkripsi tidak valid
-    - `404 Not Found`: Kategori tidak ditemukan
-    - `500 Internal Server Error`: Kesalahan server
+- **DELETE /categories/:id**: Menghapus kategori
+  - Response: `{"message": "Category deleted successfully"}`
 
-### Pembangkit Kunci (Key Generator)
+### Key Generation
 
-- **`POST /generate-key`**
-  - **Deskripsi**: Membangkitkan kunci enkripsi baru berdasarkan teks input
-  - **Request Body**:
-    ```json
-    {
-      "text": "Teks untuk membangkitkan kunci"
-    }
-    ```
-  - **Respons**:
-    - `200 OK`: Kunci berhasil dibangkitkan
-    ```json
-    {
-      "key": "Base64EncodedKey=="
-    }
-    ```
-    - `400 Bad Request`: Request tidak valid
-    - `500 Internal Server Error`: Kesalahan server
+- **POST /generate-key**: Menghasilkan kunci enkripsi dari teks
+  - Request Body: `{"text": "..."}`
+  - Response: `{"key": "..."}`
+
+### Activity Logs
+
+- **GET /activity-logs**: Mendapatkan semua log aktivitas dengan pagination
+  - Query Parameters:
+    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
+    - `offset`: Offset untuk pagination (default: 0)
+  - Response: Array dari objek ActivityLog
+
+- **GET /activity-logs/entity-type/:entityType**: Mendapatkan log aktivitas berdasarkan tipe entitas
+  - Path Parameters:
+    - `entityType`: Tipe entitas (misalnya "note", "category", "encryption", "key")
+  - Query Parameters:
+    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
+    - `offset`: Offset untuk pagination (default: 0)
+  - Response: Array dari objek ActivityLog
+
+- **GET /activity-logs/entity-id/:entityID**: Mendapatkan log aktivitas berdasarkan ID entitas
+  - Path Parameters:
+    - `entityID`: ID dari entitas
+  - Query Parameters:
+    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
+    - `offset`: Offset untuk pagination (default: 0)
+  - Response: Array dari objek ActivityLog
+
+- **GET /activity-logs/action/:action**: Mendapatkan log aktivitas berdasarkan aksi
+  - Path Parameters:
+    - `action`: Tipe aksi (misalnya "create", "update", "delete", "read", "check", "generate")
+  - Query Parameters:
+    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
+    - `offset`: Offset untuk pagination (default: 0)
+  - Response: Array dari objek ActivityLog
+
+- **GET /activity-logs/time-range**: Mendapatkan log aktivitas dalam rentang waktu tertentu
+  - Query Parameters:
+    - `startTime`: Waktu mulai dalam format RFC3339
+    - `endTime`: Waktu akhir dalam format RFC3339
+    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
+    - `offset`: Offset untuk pagination (default: 0)
+  - Response: Array dari objek ActivityLog
+
+- **DELETE /activity-logs/older-than/:days**: Menghapus log aktivitas yang lebih lama dari jumlah hari tertentu
+  - Path Parameters:
+    - `days`: Jumlah hari
+  - Response: `{"message": "Old activity logs deleted successfully", "rowsAffected": 123}`
 
 ## Konfigurasi
 
@@ -196,21 +167,25 @@ Aplikasi menggunakan file `settings.json` untuk menyimpan konfigurasi:
 
 ## Fitur Keamanan
 
-1. **Enkripsi Data Sensitif**:
-   - Konten catatan dan tag dienkripsi menggunakan AES-256 dengan GCM mode
-   - Kunci enkripsi disimpan dalam file `settings.json`
+### Enkripsi Data Sensitif
 
-2. **Validasi Kunci Enkripsi**:
-   - Sistem melakukan validasi kunci enkripsi saat aplikasi dimulai
-   - Jika kunci tidak valid, operasi modifikasi data dinonaktifkan
+Aplikasi menggunakan enkripsi AES-256 untuk mengamankan data sensitif seperti subjek dan konten catatan. Kunci enkripsi disimpan dalam file konfigurasi dan dapat dihasilkan menggunakan endpoint `/generate-key`.
 
-3. **Pembatasan Akses**:
-   - Endpoint modifikasi data (POST, PUT, DELETE) dinonaktifkan jika enkripsi tidak valid
-   - Tombol "Add Note" dan "Add Category" dinonaktifkan jika enkripsi tidak valid
+### Validasi Kunci
 
-4. **Pembangkit Kunci**:
-   - Fitur untuk membangkitkan kunci enkripsi baru berdasarkan teks input
-   - Kunci baru dapat disalin dan diterapkan ke file `settings.json`
+Sistem melakukan validasi kunci enkripsi saat startup. Jika kunci tidak valid atau tidak ada, modifikasi data akan dinonaktifkan untuk alasan keamanan.
+
+### Pembatasan Akses
+
+Endpoint yang memodifikasi data (POST, PUT, DELETE) memerlukan kunci enkripsi yang valid. Jika kunci tidak valid, permintaan akan ditolak dengan kode status 403 Forbidden.
+
+### Generasi Kunci
+
+Aplikasi menyediakan endpoint untuk menghasilkan kunci enkripsi yang konsisten dari teks input. Kunci dihasilkan menggunakan SHA-256 dan dikodekan dengan Base64.
+
+### Pencatatan Aktivitas
+
+Semua aktivitas sistem dicatat dengan detail seperti jenis aksi, entitas yang terpengaruh, deskripsi, timestamp, alamat IP, dan user agent. Log aktivitas dapat diakses melalui endpoint API dan dapat difilter berdasarkan berbagai kriteria.
 
 ## Cara Menjalankan
 
@@ -226,7 +201,13 @@ Aplikasi menggunakan file `settings.json` untuk menyimpan konfigurasi:
    ```
 
 3. **Akses aplikasi**:
-   - Buka browser dan akses `http://localhost:8080/frontend`
+   - Browser akan terbuka otomatis di `http://localhost:8080/frontend`
+   - Jika browser tidak terbuka otomatis, buka browser dan akses URL tersebut
+
+4. **Menonaktifkan pembukaan browser otomatis**:
+   ```bash
+   NO_BROWSER=1 go run main.go
+   ```
 
 ## Pengujian dengan Curl
 
@@ -245,8 +226,8 @@ curl -X POST -H "Content-Type: application/json" -d '{"subject":"Catatan Baru","
 # Mengambil semua catatan
 curl http://localhost:8080/notes
 
-# Mengambil semua catatan dengan pencarian
-curl http://localhost:8080/notes?q=catatan
+# Mengambil catatan berdasarkan kategori
+curl http://localhost:8080/notes?category_id=123
 
 # Mengambil semua catatan tanpa batasan
 curl http://localhost:8080/notes?all=true
@@ -280,9 +261,30 @@ curl -X DELETE http://localhost:8080/categories/{id}
 curl -X POST -H "Content-Type: application/json" -d '{"text":"Teks untuk membangkitkan kunci"}' http://localhost:8080/generate-key
 ```
 
+### Log Aktivitas
+
+```bash
+# Mendapatkan semua log aktivitas
+curl http://localhost:8080/activity-logs
+
+# Mendapatkan log aktivitas berdasarkan tipe entitas
+curl http://localhost:8080/activity-logs/entity-type/note
+
+# Mendapatkan log aktivitas berdasarkan ID entitas
+curl http://localhost:8080/activity-logs/entity-id/{id}
+
+# Mendapatkan log aktivitas berdasarkan aksi
+curl http://localhost:8080/activity-logs/action/create
+
+# Mendapatkan log aktivitas dalam rentang waktu
+curl "http://localhost:8080/activity-logs/time-range?startTime=2023-01-01T00:00:00Z&endTime=2023-12-31T23:59:59Z"
+
+# Menghapus log aktivitas yang lebih lama dari 30 hari
+curl -X DELETE http://localhost:8080/activity-logs/older-than/30
+```
+
 ## Lisensi
 
 Proyek ini dilisensikan di bawah **No Commercial Use License**.
 
 Ini berarti bahwa meskipun Anda bebas menggunakan, memodifikasi, dan mendistribusikan proyek ini untuk tujuan pribadi atau pendidikan, Anda dilarang keras menjualnya atau menggunakannya untuk keuntungan komersial apa pun.
-

@@ -55,6 +55,7 @@
                 <ul>
                     <li><a href="#" data-page="notes" class="active">Notes</a></li>
                     <li><a href="#" data-page="categories">Categories</a></li>
+                    <li><a href="#" data-page="activity-logs">Activity Logs</a></li>
                 </ul>
             </nav>
         </header>
@@ -109,6 +110,62 @@
                 <div class="categories-container" id="categories-list">
                     <!-- Categories will be loaded here dynamically -->
                     <div class="loading">Loading categories...</div>
+                </div>
+            </section>
+
+            <!-- Activity Logs Page -->
+            <section id="activity-logs-page" class="page">
+                <div class="page-header">
+                    <h2>Activity Logs</h2>
+                </div>
+                
+                <div class="activity-logs-filters">
+                    <div class="filter-group">
+                        <label for="entity-type-filter">Entity Type:</label>
+                        <select id="entity-type-filter">
+                            <option value="">All</option>
+                            <option value="note">Notes</option>
+                            <option value="category">Categories</option>
+                            <option value="encryption">Encryption</option>
+                            <option value="key">Key</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="action-filter">Action:</label>
+                        <select id="action-filter">
+                            <option value="">All</option>
+                            <option value="create">Create</option>
+                            <option value="read">Read</option>
+                            <option value="update">Update</option>
+                            <option value="delete">Delete</option>
+                            <option value="check">Check</option>
+                            <option value="generate">Generate</option>
+                        </select>
+                    </div>
+                    <button id="clear-logs-btn" class="btn btn-danger">Clear Old Logs</button>
+                </div>
+                
+                <div class="activity-logs-list">
+                    <table id="activity-logs-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Action</th>
+                                <th>Entity Type</th>
+                                <th>Description</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-logs-body">
+                            <!-- Activity logs will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination">
+                    <button id="prev-page-btn" class="btn" disabled>Previous</button>
+                    <span id="page-info">Page 1</span>
+                    <button id="next-page-btn" class="btn">Next</button>
                 </div>
             </section>
         </main>
@@ -209,6 +266,7 @@
     <script src="js/components/key-generator.js"></script>
     <script src="js/components/notes.js"></script>
     <script src="js/components/categories.js"></script>
+    <script src="js/components/activity-logs.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html> 

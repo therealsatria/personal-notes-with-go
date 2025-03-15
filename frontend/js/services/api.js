@@ -49,6 +49,44 @@ class ApiService {
         }
     }
 
+    /**
+     * Shorthand method for GET requests
+     * @param {string} endpoint - API endpoint
+     * @returns {Promise} - Promise with response data
+     */
+    async get(endpoint) {
+        return this.request(endpoint, 'GET');
+    }
+
+    /**
+     * Shorthand method for POST requests
+     * @param {string} endpoint - API endpoint
+     * @param {object} data - Request body data
+     * @returns {Promise} - Promise with response data
+     */
+    async post(endpoint, data) {
+        return this.request(endpoint, 'POST', data);
+    }
+
+    /**
+     * Shorthand method for PUT requests
+     * @param {string} endpoint - API endpoint
+     * @param {object} data - Request body data
+     * @returns {Promise} - Promise with response data
+     */
+    async put(endpoint, data) {
+        return this.request(endpoint, 'PUT', data);
+    }
+
+    /**
+     * Shorthand method for DELETE requests
+     * @param {string} endpoint - API endpoint
+     * @returns {Promise} - Promise with response data
+     */
+    async delete(endpoint) {
+        return this.request(endpoint, 'DELETE');
+    }
+
     // Notes API methods
     async getNotes(searchQuery = '') {
         let endpoint = '/notes';
