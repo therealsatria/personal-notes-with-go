@@ -65,10 +65,33 @@ personal-notes-with-go/
 ├── utils/
 │   ├── encryption.go          # Utilitas enkripsi
 │   └── errors.go              # Penanganan error
+├── .gitignore                 # Pengecualian file untuk Git
 ├── main.go                    # Entry point aplikasi
 ├── go.mod                     # Dependensi Go
 ├── go.sum                     # Checksum dependensi
-└── settings.json              # File konfigurasi
+├── settings.template.json     # Template untuk file konfigurasi
+└── settings.json              # File konfigurasi (tidak disertakan dalam Git)
+```
+
+## Pengaturan Awal
+
+Saat pertama kali mengkloning repositori ini, Anda perlu:
+
+1. Membuat file `settings.json` dengan kunci enkripsi yang valid
+2. Menjalankan aplikasi untuk membuat database secara otomatis
+
+```bash
+# Setelah mengkloning repositori
+cd personal-notes-with-go
+
+# Buat file settings.json dari template
+cp settings.template.json settings.json
+
+# Edit file settings.json dan tambahkan kunci enkripsi Anda
+# Atau gunakan endpoint /generate-key setelah menjalankan aplikasi
+
+# Jalankan aplikasi untuk membuat database
+go run main.go
 ```
 
 ## Endpoint API
@@ -177,6 +200,8 @@ Aplikasi menggunakan file `settings.json` untuk menyimpan konfigurasi:
 - **encryption_key**: Kunci enkripsi dalam format Base64
 - **notes_limit**: Jumlah maksimum catatan yang ditampilkan secara default
 
+> **Catatan Penting**: File `settings.json` tidak disertakan dalam repositori Git karena berisi informasi sensitif. Gunakan file `settings.template.json` sebagai template untuk membuat file konfigurasi Anda sendiri.
+
 ## Fitur Keamanan
 
 ### Enkripsi Data Sensitif
@@ -207,16 +232,22 @@ Semua aktivitas sistem dicatat dengan detail seperti jenis aksi, entitas yang te
    cd personal-notes-with-go
    ```
 
-2. **Jalankan aplikasi**:
+2. **Buat file konfigurasi**:
+   ```bash
+   cp settings.template.json settings.json
+   # Edit settings.json dan tambahkan kunci enkripsi Anda
+   ```
+
+3. **Jalankan aplikasi**:
    ```bash
    go run main.go
    ```
 
-3. **Akses aplikasi**:
+4. **Akses aplikasi**:
    - Browser akan terbuka otomatis di `http://localhost:8080/frontend`
    - Jika browser tidak terbuka otomatis, buka browser dan akses URL tersebut
 
-4. **Menonaktifkan pembukaan browser otomatis**:
+5. **Menonaktifkan pembukaan browser otomatis**:
    ```bash
    NO_BROWSER=1 go run main.go
    ```
@@ -297,6 +328,15 @@ curl http://localhost:8080/activity-logs/action/create/count
 # Menghapus log aktivitas yang lebih lama dari 30 hari
 curl -X DELETE http://localhost:8080/activity-logs/older-than/30
 ```
+
+## File yang Dikecualikan dari Git
+
+Beberapa file tidak disertakan dalam repositori Git untuk alasan keamanan dan praktis:
+
+- **settings.json**: Berisi kunci enkripsi dan pengaturan aplikasi
+- **File database (*.db, *.sqlite, *.sqlite3)**: Berisi data pengguna yang mungkin sensitif
+
+Lihat file `.gitignore` untuk daftar lengkap file yang dikecualikan.
 
 ## Fitur Frontend
 

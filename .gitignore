@@ -1,0 +1,80 @@
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+# Folders
+_obj
+_test
+vendor/
+
+# Architecture specific extensions/prefixes
+*.[568vq]
+[568vq].out
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.test
+*.prof
+*.out
+*.test
+*.cover
+.DS_Store
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Binary output
+/personal-notes-with-go
+/main
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sqlite-journal
+*.sqlite3-journal
+
+# Configuration files containing sensitive information
+settings.json
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Environment variables
+.env
+.env.local
+
+# Build output
+/dist
+/build
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Documentation
+docs/
+
+# Debug files
+debug
+
+# Backup files
+*.bak
+*~
+*.backup 
