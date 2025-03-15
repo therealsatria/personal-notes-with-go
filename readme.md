@@ -377,3 +377,6 @@ Lihat file `.gitignore` untuk daftar lengkap file yang dikecualikan.
 Proyek ini dilisensikan di bawah **No Commercial Use License**.
 
 Ini berarti bahwa meskipun Anda bebas menggunakan, memodifikasi, dan mendistribusikan proyek ini untuk tujuan pribadi atau pendidikan, Anda dilarang keras menjualnya atau menggunakannya untuk keuntungan komersial apa pun.
+
+### Next Feature
+- import export in CSV format
