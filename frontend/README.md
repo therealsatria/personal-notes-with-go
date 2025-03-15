@@ -11,6 +11,7 @@ Ini adalah frontend untuk aplikasi Personal Notes. Aplikasi ini merupakan Single
 - **Manajemen Kategori**: Pengelompokan catatan dalam kategori yang dapat disesuaikan
 - **Pencarian**: Pencarian catatan berdasarkan subjek dan konten dengan highlight hasil
 - **Pembatasan Data**: Opsi untuk membatasi jumlah catatan yang ditampilkan
+- **Activity Logging**: Tampilan dan filter untuk log aktivitas sistem
 - **UI Modern**: Antarmuka pengguna yang bersih dan responsif
 - **Navigasi SPA**: Navigasi tanpa reload halaman
 - **Notifikasi Toast**: Umpan balik pengguna melalui notifikasi toast
@@ -29,6 +30,7 @@ frontend/
 │   ├── components/         # Komponen UI
 │   │   ├── notes.js        # Komponen catatan
 │   │   ├── categories.js   # Komponen kategori
+│   │   ├── activity-logs.js # Komponen log aktivitas
 │   │   └── key-generator.js # Komponen pembangkit kunci
 │   ├── services/           # Layanan bersama
 │   │   ├── api.js          # Layanan komunikasi API
@@ -50,13 +52,48 @@ frontend/
    - Server akan otomatis mengarahkan Anda ke frontend
 
 3. Menggunakan aplikasi:
-   - Beralih antara Notes dan Categories menggunakan menu navigasi
+   - Beralih antara Notes, Categories, dan Activity Logs menggunakan menu navigasi
    - Tambahkan catatan/kategori baru menggunakan tombol "Add"
    - Edit atau hapus item yang ada menggunakan tombol pada setiap kartu
    - Gunakan fitur pencarian untuk menemukan catatan berdasarkan subjek atau konten
    - Gunakan tombol "Show All" untuk menampilkan semua catatan (tanpa batasan)
    - Gunakan tombol floating key generator untuk membuat kunci enkripsi baru
    - Perhatikan banner status enkripsi jika ada masalah dengan sistem enkripsi
+   - Lihat dan filter log aktivitas di halaman Activity Logs
+
+## Fitur Utama
+
+### Halaman Utama
+- Navigasi SPA antara Notes, Categories, dan Activity Logs
+- Indikator status enkripsi dengan pesan informatif
+- Tombol floating untuk pembangkit kunci
+
+### Manajemen Catatan
+- Daftar catatan dengan tampilan kartu yang informatif
+- Form untuk menambah dan mengedit catatan
+- Pencarian catatan berdasarkan subjek dan konten
+- Filter catatan berdasarkan kategori
+- Opsi untuk menampilkan semua catatan tanpa batasan
+
+### Manajemen Kategori
+- Daftar kategori dengan opsi edit dan hapus
+- Form untuk menambah dan mengedit kategori
+
+### Log Aktivitas
+- Daftar log aktivitas dengan informasi lengkap
+- Filter berdasarkan tipe entitas dan aksi
+- Paginasi untuk navigasi mudah
+- Opsi untuk menghapus log lama
+- Kontrol filter yang tetap terlihat saat scroll
+
+### Pembangkit Kunci
+- Form untuk menghasilkan kunci enkripsi dari teks input
+- Opsi untuk menyalin kunci ke clipboard
+
+### Notifikasi
+- Notifikasi toast untuk umpan balik operasi
+- Pesan error yang informatif
+- Konfirmasi untuk operasi penghapusan
 
 ## Fitur Keamanan
 
@@ -96,4 +133,24 @@ Implementasi frontend ini mengikuti prinsip clean code berikut:
 
 ## Integrasi dengan Backend
 
-Frontend berkomunikasi dengan backend Go melalui API RESTful. Semua operasi data dilakukan melalui endpoint API yang didokumentasikan dalam README utama proyek. Komunikasi menggunakan format JSON dan menangani enkripsi/dekripsi data sensitif. 
+Frontend berkomunikasi dengan backend Go melalui API RESTful. Semua operasi data dilakukan melalui endpoint API yang didokumentasikan dalam README utama proyek. Komunikasi menggunakan format JSON dan menangani enkripsi/dekripsi data sensitif.
+
+## Fitur Terbaru
+
+### Perbaikan Activity Logs
+- Kontrol filter yang tetap berada di atas saat halaman di-scroll
+- Paginasi yang lebih baik dengan informasi total halaman dan total log
+- Scroll otomatis ke atas tabel saat berpindah halaman
+- Tampilan yang lebih informatif dengan badge berwarna untuk aksi dan tipe entitas
+
+### Perbaikan UI
+- Animasi fade-in untuk elemen UI
+- Peningkatan responsivitas untuk berbagai ukuran layar
+- Peningkatan kontras dan keterbacaan
+- Ikon yang lebih intuitif
+
+### Perbaikan UX
+- Notifikasi toast yang lebih informatif
+- Konfirmasi untuk operasi penghapusan
+- Indikator loading saat operasi sedang berlangsung
+- Pesan error yang lebih deskriptif 

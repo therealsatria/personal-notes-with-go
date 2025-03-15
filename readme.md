@@ -32,6 +32,20 @@ personal-notes-with-go/
 ├── database/
 │   └── db.go                  # Inisialisasi database dan pembuatan tabel
 ├── frontend/                  # Aplikasi frontend
+│   ├── css/
+│   │   └── styles.css         # Semua style untuk aplikasi
+│   ├── js/
+│   │   ├── components/        # Komponen UI
+│   │   │   ├── notes.js       # Komponen catatan
+│   │   │   ├── categories.js  # Komponen kategori
+│   │   │   ├── activity-logs.js # Komponen log aktivitas
+│   │   │   └── key-generator.js # Komponen pembangkit kunci
+│   │   ├── services/          # Layanan bersama
+│   │   │   ├── api.js         # Layanan komunikasi API
+│   │   │   ├── toast.js       # Layanan notifikasi toast
+│   │   │   └── encryption-status.js # Layanan status enkripsi
+│   │   └── app.js             # Logika aplikasi utama
+│   └── index.html             # File HTML utama
 ├── handlers/
 │   ├── activity_log_handler.go # Handler untuk log aktivitas
 │   ├── category_handler.go    # Handler untuk kategori
@@ -71,6 +85,7 @@ personal-notes-with-go/
     - `category_id`: Filter berdasarkan kategori
     - `all`: Jika "true", tampilkan semua catatan tanpa batasan
     - `limit`: Jumlah maksimum catatan yang dikembalikan
+    - `q`: Query pencarian untuk subjek dan konten
   - Response: Array dari objek Note
 
 - **POST /notes**: Membuat catatan baru
@@ -110,41 +125,38 @@ personal-notes-with-go/
 
 - **GET /activity-logs**: Mendapatkan semua log aktivitas dengan pagination
   - Query Parameters:
-    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
+    - `limit`: Jumlah maksimum log yang dikembalikan (default: 20)
     - `offset`: Offset untuk pagination (default: 0)
   - Response: Array dari objek ActivityLog
+
+- **GET /activity-logs/count**: Mendapatkan jumlah total log aktivitas
+  - Response: `{"count": 123}`
 
 - **GET /activity-logs/entity-type/:entityType**: Mendapatkan log aktivitas berdasarkan tipe entitas
   - Path Parameters:
     - `entityType`: Tipe entitas (misalnya "note", "category", "encryption", "key")
   - Query Parameters:
-    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
+    - `limit`: Jumlah maksimum log yang dikembalikan (default: 20)
     - `offset`: Offset untuk pagination (default: 0)
   - Response: Array dari objek ActivityLog
 
-- **GET /activity-logs/entity-id/:entityID**: Mendapatkan log aktivitas berdasarkan ID entitas
+- **GET /activity-logs/entity-type/:entityType/count**: Mendapatkan jumlah log aktivitas berdasarkan tipe entitas
   - Path Parameters:
-    - `entityID`: ID dari entitas
-  - Query Parameters:
-    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
-    - `offset`: Offset untuk pagination (default: 0)
-  - Response: Array dari objek ActivityLog
+    - `entityType`: Tipe entitas (misalnya "note", "category", "encryption", "key")
+  - Response: `{"count": 123}`
 
 - **GET /activity-logs/action/:action**: Mendapatkan log aktivitas berdasarkan aksi
   - Path Parameters:
     - `action`: Tipe aksi (misalnya "create", "update", "delete", "read", "check", "generate")
   - Query Parameters:
-    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
+    - `limit`: Jumlah maksimum log yang dikembalikan (default: 20)
     - `offset`: Offset untuk pagination (default: 0)
   - Response: Array dari objek ActivityLog
 
-- **GET /activity-logs/time-range**: Mendapatkan log aktivitas dalam rentang waktu tertentu
-  - Query Parameters:
-    - `startTime`: Waktu mulai dalam format RFC3339
-    - `endTime`: Waktu akhir dalam format RFC3339
-    - `limit`: Jumlah maksimum log yang dikembalikan (default: 50)
-    - `offset`: Offset untuk pagination (default: 0)
-  - Response: Array dari objek ActivityLog
+- **GET /activity-logs/action/:action/count**: Mendapatkan jumlah log aktivitas berdasarkan aksi
+  - Path Parameters:
+    - `action`: Tipe aksi (misalnya "create", "update", "delete", "read", "check", "generate")
+  - Response: `{"count": 123}`
 
 - **DELETE /activity-logs/older-than/:days**: Menghapus log aktivitas yang lebih lama dari jumlah hari tertentu
   - Path Parameters:
@@ -267,21 +279,58 @@ curl -X POST -H "Content-Type: application/json" -d '{"text":"Teks untuk membang
 # Mendapatkan semua log aktivitas
 curl http://localhost:8080/activity-logs
 
+# Mendapatkan jumlah total log aktivitas
+curl http://localhost:8080/activity-logs/count
+
 # Mendapatkan log aktivitas berdasarkan tipe entitas
 curl http://localhost:8080/activity-logs/entity-type/note
 
-# Mendapatkan log aktivitas berdasarkan ID entitas
-curl http://localhost:8080/activity-logs/entity-id/{id}
+# Mendapatkan jumlah log aktivitas berdasarkan tipe entitas
+curl http://localhost:8080/activity-logs/entity-type/note/count
 
 # Mendapatkan log aktivitas berdasarkan aksi
 curl http://localhost:8080/activity-logs/action/create
 
-# Mendapatkan log aktivitas dalam rentang waktu
-curl "http://localhost:8080/activity-logs/time-range?startTime=2023-01-01T00:00:00Z&endTime=2023-12-31T23:59:59Z"
+# Mendapatkan jumlah log aktivitas berdasarkan aksi
+curl http://localhost:8080/activity-logs/action/create/count
 
 # Menghapus log aktivitas yang lebih lama dari 30 hari
 curl -X DELETE http://localhost:8080/activity-logs/older-than/30
 ```
+
+## Fitur Frontend
+
+### Halaman Utama
+- Navigasi SPA antara Notes, Categories, dan Activity Logs
+- Indikator status enkripsi dengan pesan informatif
+- Tombol floating untuk pembangkit kunci
+
+### Manajemen Catatan
+- Daftar catatan dengan tampilan kartu yang informatif
+- Form untuk menambah dan mengedit catatan
+- Pencarian catatan berdasarkan subjek dan konten
+- Filter catatan berdasarkan kategori
+- Opsi untuk menampilkan semua catatan tanpa batasan
+
+### Manajemen Kategori
+- Daftar kategori dengan opsi edit dan hapus
+- Form untuk menambah dan mengedit kategori
+
+### Log Aktivitas
+- Daftar log aktivitas dengan informasi lengkap
+- Filter berdasarkan tipe entitas dan aksi
+- Paginasi untuk navigasi mudah
+- Opsi untuk menghapus log lama
+- Kontrol filter yang tetap terlihat saat scroll
+
+### Pembangkit Kunci
+- Form untuk menghasilkan kunci enkripsi dari teks input
+- Opsi untuk menyalin kunci ke clipboard
+
+### Notifikasi
+- Notifikasi toast untuk umpan balik operasi
+- Pesan error yang informatif
+- Konfirmasi untuk operasi penghapusan
 
 ## Lisensi
 
