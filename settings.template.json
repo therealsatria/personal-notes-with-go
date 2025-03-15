@@ -1,0 +1,4 @@
+{
+  "encryption_key": "YOUR_BASE64_ENCODED_KEY",
+  "notes_limit": 10
+} 

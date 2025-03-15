@@ -85,6 +85,12 @@ class App {
                 this.navigateTo(hash);
             }
         });
+        
+        // Load components
+        this.loadScript('js/components/notes.js');
+        this.loadScript('js/components/categories.js');
+        this.loadScript('js/components/activity-logs.js');
+        this.loadScript('js/services/encryption-service.js');
     }
     
     /**

@@ -66,9 +66,21 @@ func main() {
 	}
 	defer db.Close()
 
+	// Fix any encryption issues in the database
+	if err := database.FixEncryptionIssues(db); err != nil {
+		log.Printf("WARNING: Failed to fix encryption issues: %v", err)
+		log.Printf("Some data may not be accessible.")
+	}
+
 	// Inisialisasi repository
 	categoryRepo := repositories.NewCategoryRepository(db)
 	noteRepo := repositories.NewNoteRepository(db)
+	activityLogRepo := repositories.NewActivityLogRepository(db)
+
+	// Create activity logs table if it doesn't exist
+	if err := activityLogRepo.CreateTable(); err != nil {
+		log.Printf("WARNING: Failed to create activity logs table: %v", err)
+	}
 
 	// Inisialisasi Gin
 	r := gin.Default()
@@ -93,6 +105,13 @@ func main() {
 	noteHandler := handlers.NewNoteHandler(noteRepo)
 	keyHandler := handlers.NewKeyHandler()
 	encryptionHandler := handlers.NewEncryptionHandler()
+	activityLogHandler := handlers.NewActivityLogHandler(activityLogRepo)
+
+	// Set activity logger for each handler
+	categoryHandler.SetActivityLogger(activityLogHandler)
+	noteHandler.SetActivityLogger(activityLogHandler)
+	keyHandler.SetActivityLogger(activityLogHandler)
+	encryptionHandler.SetActivityLogger(activityLogHandler)
 
 	// Encryption status endpoint
 	r.GET("/encryption/status", encryptionHandler.GetStatus)
@@ -116,6 +135,18 @@ func main() {
 
 	// Key generation endpoint
 	r.POST("/generate-key", keyHandler.GenerateKey)
+
+	// Activity logs endpoints
+	activityLogGroup := r.Group("/activity-logs")
+	{
+		activityLogGroup.GET("", requireValidEncryption(), activityLogHandler.GetLogs)
+		activityLogGroup.GET("/count", requireValidEncryption(), activityLogHandler.GetLogsCount)
+		activityLogGroup.GET("/entity-type/:entityType", requireValidEncryption(), activityLogHandler.GetLogsByEntityType)
+		activityLogGroup.GET("/entity-type/:entityType/count", requireValidEncryption(), activityLogHandler.GetLogsByEntityTypeCount)
+		activityLogGroup.GET("/action/:action", requireValidEncryption(), activityLogHandler.GetLogsByAction)
+		activityLogGroup.GET("/action/:action/count", requireValidEncryption(), activityLogHandler.GetLogsByActionCount)
+		activityLogGroup.DELETE("/older-than/:days", requireValidEncryption(), activityLogHandler.DeleteOldLogs)
+	}
 
 	// Open browser after a short delay
 	go func() {
