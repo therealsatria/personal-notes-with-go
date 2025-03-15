@@ -3,10 +3,14 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
 	"personal-notes-with-go/database"
 	"personal-notes-with-go/handlers"
 	"personal-notes-with-go/repositories"
 	"personal-notes-with-go/utils"
+	"runtime"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -23,6 +27,27 @@ func requireValidEncryption() gin.HandlerFunc {
 			return
 		}
 		c.Next()
+	}
+}
+
+// openBrowser opens the specified URL in the default browser
+func openBrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		log.Printf("Unsupported platform for auto-opening browser. Please open %s manually.", url)
+		return
+	}
+
+	if err != nil {
+		log.Printf("Failed to open browser: %v", err)
 	}
 }
 
@@ -92,7 +117,19 @@ func main() {
 	// Key generation endpoint
 	r.POST("/generate-key", keyHandler.GenerateKey)
 
+	// Open browser after a short delay
+	go func() {
+		// Wait for server to start
+		time.Sleep(500 * time.Millisecond)
+		// Check if auto-open is disabled via environment variable
+		if os.Getenv("NO_BROWSER") != "1" {
+			log.Println("Opening browser at http://localhost:8080/frontend")
+			openBrowser("http://localhost:8080/frontend")
+		}
+	}()
+
 	// Jalankan server
+	log.Println("Server starting at http://localhost:8080")
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
