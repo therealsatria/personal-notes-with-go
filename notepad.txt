@@ -1,7 +1,0 @@
-{
-    "encryption_key": "zl5kcLtby9ywTLDnB0yFor0JHWtfK7w5UDbn8gGjbA4="
-}
-
-
-
-HyY/GscHl0Naz8TQXwUsKa2YNjW2pLA8QHt8GVPOGNQ=
