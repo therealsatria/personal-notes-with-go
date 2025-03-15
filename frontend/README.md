@@ -1,68 +1,99 @@
 # Personal Notes Frontend
 
-This is the frontend for the Personal Notes application. It's a Single Page Application (SPA) built with vanilla JavaScript, HTML, and CSS.
+Ini adalah frontend untuk aplikasi Personal Notes. Aplikasi ini merupakan Single Page Application (SPA) yang dibangun dengan JavaScript vanilla, HTML, dan CSS, dengan fokus pada keamanan data melalui enkripsi end-to-end.
 
-## Features
+## Fitur
 
-- Clean, modern UI with responsive design
-- CRUD operations for notes and categories
-- SPA navigation without page reloads
-- Toast notifications for user feedback
-- Modal dialogs for forms and confirmations
-- Proper error handling
+- **Enkripsi End-to-End**: Semua data sensitif dienkripsi menggunakan AES-256 dengan encoding Base64
+- **Manajemen Kunci**: Antarmuka untuk membangkitkan dan mengelola kunci enkripsi
+- **Validasi Keamanan**: Indikator status enkripsi dan pembatasan akses saat enkripsi tidak valid
+- **Manajemen Catatan**: Operasi CRUD lengkap untuk catatan dengan prioritas dan tag
+- **Manajemen Kategori**: Pengelompokan catatan dalam kategori yang dapat disesuaikan
+- **Pencarian**: Pencarian catatan berdasarkan subjek dan konten dengan highlight hasil
+- **Pembatasan Data**: Opsi untuk membatasi jumlah catatan yang ditampilkan
+- **UI Modern**: Antarmuka pengguna yang bersih dan responsif
+- **Navigasi SPA**: Navigasi tanpa reload halaman
+- **Notifikasi Toast**: Umpan balik pengguna melalui notifikasi toast
+- **Dialog Modal**: Form dan konfirmasi dalam dialog modal
+- **Penanganan Error**: Penanganan error yang baik dengan pesan yang informatif
 
-## Structure
+## Struktur
 
-The frontend follows a component-based architecture for clean code organization:
+Frontend mengikuti arsitektur berbasis komponen untuk organisasi kode yang bersih:
 
 ```
 frontend/
 ├── css/
-│   └── styles.css          # All styles for the application
+│   └── styles.css          # Semua style untuk aplikasi
 ├── js/
-│   ├── components/         # UI components
-│   │   ├── notes.js        # Notes component
-│   │   └── categories.js   # Categories component
-│   ├── services/           # Shared services
-│   │   ├── api.js          # API communication service
-│   │   └── toast.js        # Toast notification service
-│   └── app.js              # Main application logic
-└── index.html              # Main HTML file
+│   ├── components/         # Komponen UI
+│   │   ├── notes.js        # Komponen catatan
+│   │   ├── categories.js   # Komponen kategori
+│   │   └── key-generator.js # Komponen pembangkit kunci
+│   ├── services/           # Layanan bersama
+│   │   ├── api.js          # Layanan komunikasi API
+│   │   ├── toast.js        # Layanan notifikasi toast
+│   │   └── encryption-status.js # Layanan status enkripsi
+│   └── app.js              # Logika aplikasi utama
+└── index.html              # File HTML utama
 ```
 
-## How to Use
+## Cara Menggunakan
 
-1. Start the backend server:
+1. Jalankan server backend:
    ```
    go run main.go
    ```
 
-2. Access the application:
-   - Open your browser and navigate to `http://localhost:8080`
-   - The server will automatically redirect you to the frontend
+2. Akses aplikasi:
+   - Buka browser dan navigasikan ke `http://localhost:8080/frontend`
+   - Server akan otomatis mengarahkan Anda ke frontend
 
-3. Using the application:
-   - Switch between Notes and Categories using the navigation menu
-   - Add new notes/categories using the "Add" buttons
-   - Edit or delete existing items using the buttons on each card
-   - All changes are saved to the backend automatically
+3. Menggunakan aplikasi:
+   - Beralih antara Notes dan Categories menggunakan menu navigasi
+   - Tambahkan catatan/kategori baru menggunakan tombol "Add"
+   - Edit atau hapus item yang ada menggunakan tombol pada setiap kartu
+   - Gunakan fitur pencarian untuk menemukan catatan berdasarkan subjek atau konten
+   - Gunakan tombol "Show All" untuk menampilkan semua catatan (tanpa batasan)
+   - Gunakan tombol floating key generator untuk membuat kunci enkripsi baru
+   - Perhatikan banner status enkripsi jika ada masalah dengan sistem enkripsi
 
-## Development
+## Fitur Keamanan
 
-If you want to modify the frontend:
+1. **Validasi Status Enkripsi**:
+   - Aplikasi memeriksa status enkripsi saat startup
+   - Banner peringatan ditampilkan jika enkripsi tidak valid
+   - Tombol "Add Note" dan "Add Category" dinonaktifkan jika enkripsi tidak valid
 
-1. Edit the HTML, CSS, or JavaScript files as needed
-2. Refresh your browser to see the changes
-3. No build step is required as this is a vanilla JavaScript application
+2. **Pembangkit Kunci**:
+   - Tombol floating untuk mengakses pembangkit kunci
+   - Kunci baru dapat dibangkitkan berdasarkan teks input
+   - Kunci dapat disalin dan diterapkan ke file `settings.json`
 
-## Clean Code Principles
+3. **Penanganan Error Enkripsi**:
+   - Pesan error yang jelas saat operasi enkripsi/dekripsi gagal
+   - Opsi untuk mencoba kembali operasi yang gagal
 
-This frontend implementation follows these clean code principles:
+## Pengembangan
 
-- **Single Responsibility Principle**: Each component and service has a single responsibility
-- **DRY (Don't Repeat Yourself)**: Common functionality is extracted into reusable services
-- **Separation of Concerns**: UI, business logic, and data access are separated
-- **Consistent Error Handling**: All errors are caught and displayed to the user
-- **Defensive Programming**: Input validation and error checking throughout
-- **Meaningful Names**: Variables, functions, and classes have clear, descriptive names
-- **Comments and Documentation**: Code is well-commented with JSDoc style comments 
+Jika Anda ingin memodifikasi frontend:
+
+1. Edit file HTML, CSS, atau JavaScript sesuai kebutuhan
+2. Refresh browser Anda untuk melihat perubahan
+3. Tidak diperlukan langkah build karena ini adalah aplikasi JavaScript vanilla
+
+## Prinsip Clean Code
+
+Implementasi frontend ini mengikuti prinsip clean code berikut:
+
+- **Single Responsibility Principle**: Setiap komponen dan layanan memiliki tanggung jawab tunggal
+- **DRY (Don't Repeat Yourself)**: Fungsionalitas umum diekstrak ke dalam layanan yang dapat digunakan kembali
+- **Separation of Concerns**: UI, logika bisnis, dan akses data dipisahkan
+- **Consistent Error Handling**: Semua error ditangkap dan ditampilkan kepada pengguna
+- **Defensive Programming**: Validasi input dan pemeriksaan error di seluruh aplikasi
+- **Meaningful Names**: Variabel, fungsi, dan kelas memiliki nama yang jelas dan deskriptif
+- **Comments and Documentation**: Kode didokumentasikan dengan baik dengan komentar gaya JSDoc
+
+## Integrasi dengan Backend
+
+Frontend berkomunikasi dengan backend Go melalui API RESTful. Semua operasi data dilakukan melalui endpoint API yang didokumentasikan dalam README utama proyek. Komunikasi menggunakan format JSON dan menangani enkripsi/dekripsi data sensitif. 
